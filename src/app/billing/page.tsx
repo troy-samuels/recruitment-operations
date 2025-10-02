@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Minus, Plus } from 'lucide-react'
 
-export default function BillingPage() {
+function BillingClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [tier, setTier] = React.useState('individual')
@@ -150,6 +150,14 @@ export default function BillingPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function BillingPage() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen bg-gray-50" />}> 
+      <BillingClient />
+    </React.Suspense>
   )
 }
 
