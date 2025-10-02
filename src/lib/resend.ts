@@ -21,7 +21,7 @@ export async function sendEmail({
   to,
   subject,
   html,
-  from = 'onboarding@resend.dev', // Will be replaced with verified domain
+  from = process.env.RESEND_FROM_EMAIL || 'onboarding@send.jobwall.co.uk',
 }: {
   to: string | string[]
   subject: string
