@@ -84,7 +84,7 @@ const DashboardTopBar: React.FC = () => {
   const timeLeftLabel = `Days left in Q: ${daysLeft}`
 
   return (
-    <div className="bg-white border-b border-gray-200 px-6 lg:px-8 py-4 flex items-center justify-between">
+    <div className="hidden md:flex bg-white border-b border-gray-200 px-6 lg:px-8 py-4 items-center justify-between">
       {/* Left Section - Brand and Analytics */}
       <div className="flex items-center gap-4 md:gap-8">
         <div className="font-heading text-xl font-bold text-gray-900">

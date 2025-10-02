@@ -220,9 +220,9 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, isOverlay = false, 
 
   // Clean CSS classes without transform conflicts
   // CRITICAL: Never use pointer-events-none on dragging elements as it breaks drag functionality
-  const paddingClass = density === 'compact' ? 'p-2' : 'p-3'
+  const paddingClass = density === 'compact' ? 'p-2' : 'p-2 sm:p-3'
   const cardClasses = `
-    bg-white relative ${paddingClass} pl-3 rounded-xl ring-1 ring-gray-200 shadow-sm cursor-grab active:cursor-grabbing
+    bg-white relative ${paddingClass} pl-2 sm:pl-3 rounded-xl ring-1 ring-gray-200 shadow-sm cursor-grab active:cursor-grabbing
     hover:shadow-md transition-shadow duration-200 w-full
     ${isDragging ? 'opacity-0' : 'hover:ring-gray-300'}
   `.trim()
@@ -242,12 +242,12 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, isOverlay = false, 
         style={{ backgroundColor: accentColorFromLevel(card.controlLevel) }}
         aria-hidden="true"
       />
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-1 sm:gap-2">
         <div className="flex-1 min-w-0">
-          <h4 className="font-body text-sm font-bold text-gray-900 truncate mb-1">
+          <h4 className="font-body text-xs sm:text-sm font-bold text-gray-900 truncate mb-0.5 sm:mb-1">
             {card.jobTitle}
           </h4>
-          <p className="font-body text-xs text-gray-600 truncate">
+          <p className="font-body text-[10px] sm:text-xs text-gray-600 truncate">
             {card.company}
           </p>
           <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-500">
@@ -593,13 +593,14 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
     const container = measureRef.current
     if (!container) return
 
-    // Mobile (<768px): Fit 2 columns side-by-side for better overview
+    // Mobile (<768px): Fit 3 columns for better pipeline overview
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       const sidebarWidth = leftCollapsed ? 48 : 192 // w-12 collapsed, w-48 expanded
-      const gapPx = 12 // Smaller gap on mobile
-      const availableWidth = window.innerWidth - sidebarWidth - gapPx
-      const columnWidth = Math.floor(availableWidth / 2)
-      setColumnWidth(Math.max(150, columnWidth)) // Min 150px per column
+      const totalGapPx = 16 // Total gap space for 3 columns (2 gaps at 8px each)
+      const paddingPx = 8 // Account for container padding (4px × 2)
+      const availableWidth = window.innerWidth - sidebarWidth - totalGapPx - paddingPx
+      const columnWidth = Math.floor(availableWidth / 3) // Fit 3 columns
+      setColumnWidth(Math.max(95, columnWidth)) // Min 95px per column for compact cards
       return
     }
 

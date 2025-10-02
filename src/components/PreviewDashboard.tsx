@@ -41,8 +41,8 @@ const PreviewDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Center Content - Flexible with Responsive Padding */}
-        <main className={`flex-1 overflow-y-auto bg-gray-100 transition-all duration-300 px-2 py-3 sm:px-4 sm:py-4 lg:${
+        {/* Center Content - Minimal Padding on Mobile */}
+        <main className={`flex-1 overflow-y-auto bg-gray-100 transition-all duration-300 px-1 py-1 sm:px-4 sm:py-4 lg:${
           leftCollapsed && rightCollapsed
             ? 'p-8' // More padding when both collapsed (desktop)
             : (!leftCollapsed && !rightCollapsed)
@@ -72,13 +72,6 @@ const PreviewDashboard: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Professional Instructions */}
-      <div className="bg-blue-50 border-t border-blue-200 p-3">
-        <p className="text-center text-sm text-blue-700">
-          Use the collapse buttons in each sidebar to focus on the kanban board
-        </p>
       </div>
       </div>
     </WorkspaceProvider>
