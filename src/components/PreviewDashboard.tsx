@@ -20,9 +20,9 @@ const PreviewDashboard: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Navigation - Professional Sidebar (Hidden on Mobile) */}
-        <div className={`hidden lg:flex bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
-          leftCollapsed ? 'w-16' : 'w-64'
+        {/* Left Navigation - Minimal on Mobile, Full on Desktop */}
+        <div className={`flex bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
+          leftCollapsed ? 'w-12 lg:w-16' : 'w-48 lg:w-64'
         } flex-col`}>
           <LeftNavigation collapsed={leftCollapsed} />
 

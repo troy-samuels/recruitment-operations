@@ -417,7 +417,7 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
   const [tasksByCard, setTasksByCard] = useState<Record<string, TaskItem[]>>({})
   // Single clean layout that fits viewport where possible
   const [density] = useState<'comfortable' | 'compact'>('comfortable')
-  const [columnWidth, setColumnWidth] = useState<number>(280)
+  const [columnWidth, setColumnWidth] = useState<number>(160)
   const measureRef = useRef<HTMLDivElement>(null)
   const [urgentCount, setUrgentCount] = useState<number>(0)
 
@@ -593,10 +593,13 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
     const container = measureRef.current
     if (!container) return
 
-    // Mobile-first: use 90% of viewport width for better fit
+    // Mobile (<768px): Fit 2 columns side-by-side for better overview
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      const mobileWidth = Math.floor(window.innerWidth * 0.9)
-      setColumnWidth(mobileWidth)
+      const sidebarWidth = leftCollapsed ? 48 : 192 // w-12 collapsed, w-48 expanded
+      const gapPx = 12 // Smaller gap on mobile
+      const availableWidth = window.innerWidth - sidebarWidth - gapPx
+      const columnWidth = Math.floor(availableWidth / 2)
+      setColumnWidth(Math.max(150, columnWidth)) // Min 150px per column
       return
     }
 
