@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
 		const priceId = getEnv('NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID') || getEnv('STRIPE_DEFAULT_PRICE_ID')
 		if (!priceId) return NextResponse.json({ error: 'Missing priceId' }, { status: 400 })
 
-		const url = `https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}?expand[]=tiers&expand[]=product`
-		const res = await fetch(url, {
+		const safeId = priceId.trim().replace(/\s+/g,'')
+		const priceRes = await fetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(safeId)}`, {
 			method: 'GET',
 			headers: {
 				'Authorization': `Bearer ${secretKey}`,
@@ -22,12 +22,18 @@ export async function GET(req: NextRequest) {
 			},
 			// Edge default timeout is generous; rely on Stripe retries server-side
 		})
-		if (!res.ok) {
-			const text = await res.text().catch(()=> '')
-			return NextResponse.json({ error: `Stripe error (${res.status})`, details: text.slice(0, 500) }, { status: 500 })
+		if (!priceRes.ok) {
+			const text = await priceRes.text().catch(()=> '')
+			return NextResponse.json({ error: `Stripe error (${priceRes.status})`, details: text.slice(0, 500) }, { status: 500 })
 		}
-		const price = await res.json() as any
-		const product = price.product && typeof price.product === 'object' ? price.product : null
+		const price = await priceRes.json() as any
+		let product: any = null
+		if (price.product && typeof price.product === 'string') {
+			const prodRes = await fetch(`https://api.stripe.com/v1/products/${encodeURIComponent(price.product)}`, {
+				headers: { Authorization: `Bearer ${secretKey}`, Accept: 'application/json' },
+			})
+			if (prodRes.ok) product = await prodRes.json()
+		}
 
 		return NextResponse.json({
 			price: {

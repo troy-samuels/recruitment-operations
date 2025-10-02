@@ -14,8 +14,8 @@ export async function GET(req: NextRequest) {
     const priceId = searchParams.get('priceId') || getEnv('NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID') || getEnv('STRIPE_DEFAULT_PRICE_ID')
     if (!priceId) return NextResponse.json({ error: 'Missing priceId' }, { status: 400 })
 
-    const url = `https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}?expand[]=tiers&expand[]=product`
-    const res = await fetch(url, {
+    const safeId = priceId.trim().replace(/\s+/g,'')
+    const res = await fetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(safeId)}`, {
       headers: {
         Authorization: `Bearer ${secretKey}`,
         Accept: 'application/json',
@@ -27,7 +27,15 @@ export async function GET(req: NextRequest) {
     }
     const data = await res.json()
     const price: any = data
-    const product: any = price.product && typeof price.product === 'object' ? price.product : null
+    let product: any = null
+    if (price.product && typeof price.product === 'string') {
+      const prodRes = await fetch(`https://api.stripe.com/v1/products/${encodeURIComponent(price.product)}`, {
+        headers: { Authorization: `Bearer ${secretKey}`, Accept: 'application/json' },
+      })
+      if (prodRes.ok) product = await prodRes.json()
+    } else if (price.product && typeof price.product === 'object') {
+      product = price.product
+    }
 
     return NextResponse.json({
       price: {
