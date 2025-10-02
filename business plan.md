@@ -1,4 +1,4 @@
-# Recruitment Operations Business Plan Analysis: Pipeline Visibility & Operations Platform
+`# Recruitment Operations Business Plan Analysis: Pipeline Visibility & Operations Platform
 
 ## Market validation confirms critical need for operational intelligence layer
 
@@ -18,7 +18,7 @@ Bullhorn, Vincere, and JobAdder are potential partners, not competitors. These p
 
 ### Strategic positioning: "Your recruitment command center"
 
-Position recruitment-operations as the **operational dashboard** that makes existing systems actionable. Like how Mixpanel doesn't replace databases but makes data visible and actionable, recruitment-operations doesn't replace ATS/CRM but transforms scattered information into clear, prioritized workflows. 
+Position recruitment-operations as the **operational dashboard** that makes existing systems actionable. Like how Mixpanel doesn't replace databases but makes data visible and actionable, recruitment-operations doesn't replace ATS/CRM but transforms scattered information into clear, prioritised workflows. 
 
 Key messaging: 
 - "See every candidate, every role, every action needed—in one view"
@@ -98,7 +98,7 @@ Critical: This is NOT about replacing existing tools but enhancing them. Message
 
 ## Technology approach: Speed and simplicity over feature complexity
 
-recruitment-operations's technical philosophy prioritizes instant value over comprehensive features:
+recruitment-operations's technical philosophy prioritises instant value over comprehensive features:
 
 **Core Technical Principles**:
 1. **2-minute setup**: User sees their pipeline populated within 120 seconds of signup

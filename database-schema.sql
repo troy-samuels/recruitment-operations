@@ -97,6 +97,65 @@ CREATE TABLE IF NOT EXISTS role_assignments (
 -- =============================================
 -- CANDIDATES TABLE
 -- =============================================
+
+-- =============================================
+-- LEADS TABLE (pre-onboarding submissions)
+-- =============================================
+CREATE TABLE IF NOT EXISTS leads (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    organisation TEXT NOT NULL,
+    source TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS leads_email_idx ON leads(email);
+
+-- =============================================
+-- TASKS (auto- and user-generated)
+-- =============================================
+CREATE TABLE IF NOT EXISTS tasks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    status TEXT CHECK (status IN ('open','done','cancelled')) DEFAULT 'open',
+    priority TEXT CHECK (priority IN ('low','normal','high')) DEFAULT 'normal',
+    due_at TIMESTAMPTZ,
+    source TEXT CHECK (source IN ('manual','auto')) DEFAULT 'manual',
+    rule_id UUID,
+    created_by UUID REFERENCES profiles(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS tasks_role_idx ON tasks(role_id);
+
+-- =============================================
+-- AUTO TASK RULES (workspace-level)
+-- =============================================
+CREATE TABLE IF NOT EXISTS auto_task_rules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+    to_stage TEXT NOT NULL,
+    action_title TEXT NOT NULL,
+    delay_hours INTEGER NOT NULL DEFAULT 48,
+    enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS auto_task_rules_ws_idx ON auto_task_rules(workspace_id);
+
+-- =============================================
+-- CLIENT RESPONSE STATS (for adaptive follow-ups)
+-- =============================================
+CREATE TABLE IF NOT EXISTS client_response_stats (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+    client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
+    metric TEXT CHECK (metric IN ('feedback_response_days')) NOT NULL,
+    value_numeric DECIMAL,
+    samples INTEGER DEFAULT 0,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS candidates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
@@ -151,6 +210,23 @@ CREATE TABLE IF NOT EXISTS activities (
     duration_minutes INTEGER,
     activity_date DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =============================================
+-- EVENTS TABLE (for analytics & telemetry)
+-- =============================================
+CREATE TABLE IF NOT EXISTS events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ts TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    role_id UUID REFERENCES roles(id) ON DELETE SET NULL,
+    candidate_id UUID REFERENCES candidates(id) ON DELETE SET NULL,
+    company TEXT,
+    stage TEXT,
+    event_name TEXT NOT NULL,
+    value_numeric DECIMAL,
+    meta JSONB DEFAULT '{}'::jsonb
 );
 
 -- =============================================
@@ -308,6 +384,99 @@ CREATE TRIGGER update_candidates_updated_at BEFORE UPDATE ON candidates
 
 CREATE TRIGGER update_pipeline_stages_updated_at BEFORE UPDATE ON pipeline_stages
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =============================================
+-- EVENTS INDEXES & RLS
+-- =============================================
+CREATE INDEX IF NOT EXISTS idx_events_ws_ts ON events(workspace_id, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_events_ws_name_ts ON events(workspace_id, event_name, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_events_ws_role_ts ON events(workspace_id, role_id, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_events_ws_company_ts ON events(workspace_id, company, ts DESC);
+
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can access events in their workspace" ON events
+    FOR ALL USING (
+        workspace_id = (
+            SELECT workspace_id FROM profiles WHERE id = auth.uid()
+        )
+    );
+
+-- =============================================
+-- BILLING: WORKSPACE SUBSCRIPTIONS
+-- =============================================
+CREATE TABLE IF NOT EXISTS workspace_subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    stripe_customer_id TEXT,
+    stripe_subscription_id TEXT UNIQUE,
+    price_id TEXT,
+    seats INTEGER NOT NULL DEFAULT 1,
+    status TEXT CHECK (status IN ('trialing','active','past_due','canceled','incomplete','incomplete_expired','unpaid')) DEFAULT 'trialing',
+    current_period_end TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ws_subs_workspace_id ON workspace_subscriptions(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_ws_subs_customer_id ON workspace_subscriptions(stripe_customer_id);
+
+ALTER TABLE workspace_subscriptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their workspace subscription" ON workspace_subscriptions
+  FOR SELECT USING (
+    workspace_id = (
+      SELECT workspace_id FROM profiles WHERE id = auth.uid()
+    )
+  );
+
+-- =============================================
+-- AGGREGATION VIEWS (Materialized) FOR ANALYTICS
+-- =============================================
+-- Daily counts by event
+CREATE MATERIALIZED VIEW IF NOT EXISTS events_daily_counts AS
+SELECT
+    workspace_id,
+    event_name,
+    date_trunc('day', ts) AS day,
+    COUNT(*)::INTEGER AS ct
+FROM events
+GROUP BY 1,2,3;
+
+CREATE INDEX IF NOT EXISTS idx_events_daily_counts_ws_day_name ON events_daily_counts(workspace_id, day, event_name);
+
+-- Daily counts by user
+CREATE MATERIALIZED VIEW IF NOT EXISTS events_user_daily_counts AS
+SELECT
+    workspace_id,
+    user_id,
+    event_name,
+    date_trunc('day', ts) AS day,
+    COUNT(*)::INTEGER AS ct
+FROM events
+GROUP BY 1,2,3,4;
+
+CREATE INDEX IF NOT EXISTS idx_events_user_daily_counts_ws_user_day ON events_user_daily_counts(workspace_id, user_id, day);
+
+-- Daily counts by company
+CREATE MATERIALIZED VIEW IF NOT EXISTS events_company_daily_counts AS
+SELECT
+    workspace_id,
+    COALESCE(company,'') AS company,
+    event_name,
+    date_trunc('day', ts) AS day,
+    COUNT(*)::INTEGER AS ct
+FROM events
+GROUP BY 1,2,3,4;
+
+CREATE INDEX IF NOT EXISTS idx_events_company_daily_counts_ws_company_day ON events_company_daily_counts(workspace_id, company, day);
+
+-- Helper function to refresh all analytics materialized views
+CREATE OR REPLACE FUNCTION refresh_analytics_views()
+RETURNS VOID LANGUAGE plpgsql AS $$
+BEGIN
+  REFRESH MATERIALIZED VIEW CONCURRENTLY events_daily_counts;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY events_user_daily_counts;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY events_company_daily_counts;
+END; $$;
 
 -- =============================================
 -- SAMPLE DATA FOR TESTING

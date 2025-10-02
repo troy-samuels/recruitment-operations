@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;700;800&family=Figtree:wght@400;500;600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cream-100 text-primary-500 font-body text-body;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  h1 {
+    @apply font-heading font-extrabold text-hero text-primary-500 leading-tight;
+  }
+  h2 {
+    @apply font-heading font-bold text-heading text-primary-500;
+  }
+  h3, h4, h5, h6 {
+    @apply font-heading font-semibold text-lg text-primary-500;
+  }
+}
+
+@layer components {
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes dragFloat {
+    0% {
+      transform: translateY(0) scale(1) rotate(0deg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    25% {
+      transform: translateY(-8px) scale(1.05) rotate(-1deg);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+    50% {
+      transform: translateY(-12px) scale(1.08) rotate(-2deg);
+      box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+    }
+    75% {
+      transform: translateY(-8px) scale(1.05) rotate(-1deg);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+    100% {
+      transform: translateY(0) scale(1) rotate(0deg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  /* Real drag-and-drop styles with dnd-kit */
+  .dnd-item {
+    will-change: transform;
+    cursor: grab;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+
+  .dnd-item:active {
+    cursor: grabbing;
+  }
+
+  /* Removed conflicting .dnd-item.dragging and .dnd-overlay classes
+     that interfered with @dnd-kit positioning */
+
+  .drop-zone {
+    transition: all 200ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .drop-zone.drag-over {
+    background-color: rgba(59, 130, 246, 0.08);
+    border-color: rgba(59, 130, 246, 0.4);
+    transform: scale(1.02);
+    box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+
+  .drop-success {
+    animation: dropSuccess 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes dropSuccess {
+    0% {
+      transform: scale(1);
+      background-color: transparent;
+    }
+    30% {
+      transform: scale(1.05);
+      background-color: rgba(34, 197, 94, 0.1);
+    }
+    70% {
+      transform: scale(1.02);
+      background-color: rgba(34, 197, 94, 0.05);
+    }
+    100% {
+      transform: scale(1);
+      background-color: transparent;
+    }
+  }
+
+
+  .animate-slide-in {
+    animation: slideIn 0.5s ease-out;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  .cursor-grab {
+    cursor: grab;
+  }
+
+  .cursor-grab:active {
+    cursor: grabbing;
+  }
+
+  /* Hide scrollbar for horizontal scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+
+  /* Smooth scrolling for kanban columns */
+  .kanban-scroll {
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+  }
+
+  .kanban-column {
+    scroll-snap-align: start;
+    min-width: 300px;
+  }
+
+  /* Custom scroll indicators */
+  .scroll-indicator {
+    transition: all 0.3s ease;
+  }
+
+  .scroll-indicator.active {
+    background-color: #3b82f6;
+    transform: scale(1.2);
+  }
+}

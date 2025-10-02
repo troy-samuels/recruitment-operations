@@ -1,0 +1,88 @@
+'use client'
+
+import React, { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import DashboardTopBar from './DashboardTopBar'
+import WorkspaceProvider from '@/components/WorkspaceProvider'
+import LeftNavigation from './LeftNavigation'
+import RightPanel from './RightPanel'
+import AnimatedKanban from './AnimatedKanban'
+
+const PreviewDashboard: React.FC = () => {
+  const [leftCollapsed, setLeftCollapsed] = useState(true)  // Start collapsed
+  const [rightCollapsed, setRightCollapsed] = useState(true)  // Start collapsed
+
+  return (
+    <WorkspaceProvider>
+      <div className="min-h-screen bg-gray-100 flex flex-col">
+        {/* Top Bar - Always Visible */}
+        <DashboardTopBar />
+
+      {/* Main Content Area */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Navigation - Professional Sidebar */}
+        <div className={`bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
+          leftCollapsed ? 'w-16' : 'w-64'
+        } flex flex-col`}>
+          <LeftNavigation collapsed={leftCollapsed} />
+
+          {/* Integrated Collapse Button */}
+          <div className="p-3 border-t border-gray-200">
+            <button
+              onClick={() => setLeftCollapsed(!leftCollapsed)}
+              className="w-full flex items-center justify-center p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {leftCollapsed ? (
+                <ChevronRight className="w-4 h-4" />
+              ) : (
+                <ChevronLeft className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Center Content - Flexible with Responsive Padding */}
+        <main className={`flex-1 overflow-y-auto bg-gray-100 transition-all duration-300 ${
+          leftCollapsed && rightCollapsed
+            ? 'p-8' // More padding when both collapsed
+            : (!leftCollapsed && !rightCollapsed)
+            ? 'p-3' // Less padding when both expanded
+            : 'p-6' // Medium padding when one expanded
+        }`}>
+          <AnimatedKanban />
+        </main>
+
+        {/* Right Panel - Professional Sidebar */}
+        <div className={`bg-white border-l border-gray-200 transition-all duration-300 ease-in-out ${
+          rightCollapsed ? 'w-16' : 'w-80'
+        } flex flex-col`}>
+          <RightPanel collapsed={rightCollapsed} />
+
+          {/* Integrated Collapse Button */}
+          <div className="p-3 border-t border-gray-200">
+            <button
+              onClick={() => setRightCollapsed(!rightCollapsed)}
+              className="w-full flex items-center justify-center p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {rightCollapsed ? (
+                <ChevronLeft className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Professional Instructions */}
+      <div className="bg-blue-50 border-t border-blue-200 p-3">
+        <p className="text-center text-sm text-blue-700">
+          Use the collapse buttons in each sidebar to focus on the kanban board
+        </p>
+      </div>
+      </div>
+    </WorkspaceProvider>
+  )
+}
+
+export default PreviewDashboard
