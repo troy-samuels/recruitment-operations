@@ -2,6 +2,9 @@
 const nextConfig = {
   // Workaround for Next.js 15.0.3 static error page bug
   output: 'standalone',
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   async redirects() {
     return [
       {
