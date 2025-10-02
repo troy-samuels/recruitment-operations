@@ -3,14 +3,10 @@ import React from 'react'
 import Header from '@/components/Header'
 import PreviewDashboard from '@/components/PreviewDashboard'
 import TrustIndicators from '@/components/TrustIndicators'
-import RealTimeCounter from '@/components/RealTimeCounter'
-import CaseStudySpotlight from '@/components/CaseStudySpotlight'
-import ResourceHub from '@/components/ResourceHub'
 import PricingSection from '@/components/PricingSection'
 import FAQSection from '@/components/FAQSection'
 import Footer from '@/components/Footer'
 import { ArrowRight } from 'lucide-react'
-import FeaturesSection from '@/components/FeaturesSection'
 import SignupModal from '@/components/SignupModal'
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter } from 'next/navigation'
@@ -66,9 +62,6 @@ export default function Home() {
       </section>
 
 
-      {/* Features Section */}
-      <FeaturesSection />
-
       {/* Dashboard Preview Section (How it works) */}
       <section id="how-it-works" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,15 +91,6 @@ export default function Home() {
 
       {/* Trust Indicators Section */}
       <TrustIndicators />
-
-      {/* Real-Time Counter with Problem-Solution Framework */}
-      <RealTimeCounter />
-
-      {/* Case Study Spotlight */}
-      <CaseStudySpotlight />
-
-      {/* Resource Hub Section */}
-      <ResourceHub />
 
       {/* Pricing Section */}
       <PricingSection />
