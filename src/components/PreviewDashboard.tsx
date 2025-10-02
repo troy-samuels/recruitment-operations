@@ -20,10 +20,10 @@ const PreviewDashboard: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Navigation - Professional Sidebar */}
-        <div className={`bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
+        {/* Left Navigation - Professional Sidebar (Hidden on Mobile) */}
+        <div className={`hidden lg:flex bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
           leftCollapsed ? 'w-16' : 'w-64'
-        } flex flex-col`}>
+        } flex-col`}>
           <LeftNavigation collapsed={leftCollapsed} />
 
           {/* Integrated Collapse Button */}
@@ -42,20 +42,20 @@ const PreviewDashboard: React.FC = () => {
         </div>
 
         {/* Center Content - Flexible with Responsive Padding */}
-        <main className={`flex-1 overflow-y-auto bg-gray-100 transition-all duration-300 ${
+        <main className={`flex-1 overflow-y-auto bg-gray-100 transition-all duration-300 px-2 py-3 sm:px-4 sm:py-4 lg:${
           leftCollapsed && rightCollapsed
-            ? 'p-8' // More padding when both collapsed
+            ? 'p-8' // More padding when both collapsed (desktop)
             : (!leftCollapsed && !rightCollapsed)
-            ? 'p-3' // Less padding when both expanded
-            : 'p-6' // Medium padding when one expanded
+            ? 'p-3' // Less padding when both expanded (desktop)
+            : 'p-6' // Medium padding when one expanded (desktop)
         }`}>
           <AnimatedKanban />
         </main>
 
-        {/* Right Panel - Professional Sidebar */}
-        <div className={`bg-white border-l border-gray-200 transition-all duration-300 ease-in-out ${
+        {/* Right Panel - Professional Sidebar (Hidden on Mobile) */}
+        <div className={`hidden lg:flex bg-white border-l border-gray-200 transition-all duration-300 ease-in-out ${
           rightCollapsed ? 'w-16' : 'w-80'
-        } flex flex-col`}>
+        } flex-col`}>
           <RightPanel collapsed={rightCollapsed} />
 
           {/* Integrated Collapse Button */}

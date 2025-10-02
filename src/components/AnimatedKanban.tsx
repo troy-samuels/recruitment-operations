@@ -417,7 +417,7 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
   const [tasksByCard, setTasksByCard] = useState<Record<string, TaskItem[]>>({})
   // Single clean layout that fits viewport where possible
   const [density] = useState<'comfortable' | 'compact'>('comfortable')
-  const [columnWidth, setColumnWidth] = useState<number>(320)
+  const [columnWidth, setColumnWidth] = useState<number>(280)
   const measureRef = useRef<HTMLDivElement>(null)
   const [urgentCount, setUrgentCount] = useState<number>(0)
 
@@ -592,6 +592,15 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
   const recomputeColumnWidth = () => {
     const container = measureRef.current
     if (!container) return
+
+    // Mobile-first: use 90% of viewport width for better fit
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      const mobileWidth = Math.floor(window.innerWidth * 0.9)
+      setColumnWidth(mobileWidth)
+      return
+    }
+
+    // Desktop: existing responsive logic
     const available = container.clientWidth
     const numCols = stages.length
     const gapPx = 16
