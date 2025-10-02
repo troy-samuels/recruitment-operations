@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 	try {
 		const secretKey = getEnv('NEXT_STRIPE_SECRET_KEY') || getEnv('STRIPE_SECRET_KEY') || getEnv('STRIPE_LIVE_SECRET_KEY')
 		if (!secretKey) return NextResponse.json({ error: 'Stripe not configured' }, { status: 400 })
-		const priceId = getEnv('STRIPE_DEFAULT_PRICE_ID') || getEnv('NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID')
+		const priceId = getEnv('NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID') || getEnv('STRIPE_DEFAULT_PRICE_ID')
 		if (!priceId) return NextResponse.json({ error: 'Missing priceId' }, { status: 400 })
 
 		const url = `https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}?expand[]=tiers&expand[]=product`
