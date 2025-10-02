@@ -593,14 +593,14 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
     const container = measureRef.current
     if (!container) return
 
-    // Mobile (<768px): Fit 3 columns for better pipeline overview
+    // Mobile (<768px): Fit 2 columns for better readability
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       const sidebarWidth = leftCollapsed ? 48 : 192 // w-12 collapsed, w-48 expanded
-      const totalGapPx = 16 // Total gap space for 3 columns (2 gaps at 8px each)
+      const totalGapPx = 8 // Gap between 2 columns (single gap)
       const paddingPx = 8 // Account for container padding (4px × 2)
       const availableWidth = window.innerWidth - sidebarWidth - totalGapPx - paddingPx
-      const columnWidth = Math.floor(availableWidth / 3) // Fit 3 columns
-      setColumnWidth(Math.max(95, columnWidth)) // Min 95px per column for compact cards
+      const columnWidth = Math.floor(availableWidth / 2) // Fit 2 columns
+      setColumnWidth(Math.max(140, columnWidth)) // Min 140px per column for readability
       return
     }
 

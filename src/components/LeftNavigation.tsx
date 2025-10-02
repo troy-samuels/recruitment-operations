@@ -70,7 +70,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
   if (collapsed) {
     return (
       <div className="h-full flex flex-col bg-white">
-        <div className="p-2">
+        <div className="p-0 md:p-2">
           <nav className="flex flex-col items-center gap-1">
             {/* Section: Quick Actions */}
             <button title="Urgent Actions" className="relative p-2 rounded-lg hover:bg-gray-100" onClick={()=> window.dispatchEvent(new Event('expand-sidebar'))}>
@@ -121,7 +121,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
         </div>
 
         {/* Bottom Settings */}
-        <div className="mt-auto p-2">
+        <div className="mt-auto p-0 md:p-2">
           <button title="Settings" className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-gray-100">
             <Settings className="w-4 h-4" />
           </button>
