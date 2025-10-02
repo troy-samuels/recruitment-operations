@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'edge'
-export const preferredRegion = 'iad1'
 
 function getEnv(name: string): string | undefined {
   try { return (process.env as any)[name] as string | undefined } catch { return undefined }
