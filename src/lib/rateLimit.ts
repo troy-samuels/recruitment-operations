@@ -54,8 +54,13 @@ function getClientIdentifier(req: NextRequest, customIdentifier?: (req: NextRequ
     return realIp
   }
 
-  // Fallback to connection IP (may not work in serverless)
-  return req.ip || 'unknown'
+  // Fallback: derive from request URL host (least ideal but typed)
+  try {
+    const url = new URL(req.url)
+    return url.hostname || 'unknown'
+  } catch {
+    return 'unknown'
+  }
 }
 
 /**
