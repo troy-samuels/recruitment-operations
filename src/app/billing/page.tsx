@@ -11,6 +11,7 @@ export default function BillingPage() {
   const [seatsPurchased, setSeatsPurchased] = React.useState(1)
   const [seatsUsed, setSeatsUsed] = React.useState(1)
   const [loading, setLoading] = React.useState(false)
+  const [promo, setPromo] = React.useState('')
   const [price, setPrice] = React.useState<{ billing_scheme: string | null; tiers_mode: string | null; unit_amount: number | null; tiers: Array<{ up_to: number | null; unit_amount: number | null; flat_amount: number | null }> | null } | null>(null)
 
   React.useEffect(() => {
@@ -92,7 +93,10 @@ export default function BillingPage() {
                   setLoading(true)
                   const priceId = process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID || ''
                   const workspaceId = (typeof window !== 'undefined' && localStorage.getItem('workspace_id')) || ''
-                  const res = await fetch('/api/stripe/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seats: seatsPurchased, priceId, workspaceId }) })
+                  const payload: any = { seats: seatsPurchased, priceId, workspaceId }
+                  const code = (promo || '').trim()
+                  if (code) payload.promoCode = code
+                  const res = await fetch('/api/stripe/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                   const json = await res.json()
                   if (!res.ok) throw new Error(json?.error || 'Failed to create session')
                   if (json.url) {
@@ -114,6 +118,34 @@ export default function BillingPage() {
               {loading ? 'Starting...' : 'Start Subscription'}
             </button>
             <div className="text-xs text-gray-500">7-day free trial. You can cancel anytime.</div>
+          </div>
+
+          {/* Apply promotion code to existing subscription */}
+          <div className="pt-4 border-t border-gray-100">
+            <div className="text-sm font-medium text-gray-900 mb-2">Have a promotion code?</div>
+            <div className="flex gap-2 items-center">
+              <input value={promo} onChange={e=>setPromo(e.target.value)} placeholder="Enter code" className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+              <button
+                disabled={loading || !promo.trim()}
+                className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm disabled:opacity-60 hover:bg-gray-50"
+                onClick={async ()=>{
+                  try {
+                    setLoading(true)
+                    const workspaceId = (typeof window !== 'undefined' && localStorage.getItem('workspace_id')) || ''
+                    const res = await fetch('/api/stripe/apply-promo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: promo.trim(), workspaceId }) })
+                    const j = await res.json()
+                    if (!res.ok) throw new Error(j?.error || 'Failed to apply code')
+                    alert('Promotion applied to your subscription')
+                  } catch (e) {
+                    alert((e as any)?.message || 'Failed to apply code')
+                  } finally {
+                    setLoading(false)
+                  }
+                }}
+              >
+                Apply
+              </button>
+            </div>
           </div>
         </div>
       </div>

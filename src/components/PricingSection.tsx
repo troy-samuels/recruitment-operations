@@ -9,6 +9,7 @@ const formatGBP = (p: number) => new Intl.NumberFormat('en-GB', { style: 'curren
 const PricingSection: React.FC = () => {
   const [seats, setSeats] = React.useState<number>(1)
   const [loading, setLoading] = React.useState(false)
+  const [promo, setPromo] = React.useState<string>('')
   const [price, setPrice] = React.useState<{ currency: string; billing_scheme: string | null; tiers_mode: string | null; unit_amount: number | null; tiers: Array<{ up_to: number | null; unit_amount: number | null; flat_amount: number | null }> | null } | null>(null)
   const brandPreview = React.useMemo(() => {
     if (typeof window !== 'undefined') {
@@ -57,7 +58,10 @@ const PricingSection: React.FC = () => {
       setLoading(true)
       const workspaceId = (typeof window !== 'undefined' && localStorage.getItem('workspace_id')) || ''
       try { trackEvent('checkout_started', { seats, source: 'pricing' }) } catch {}
-      const res = await fetch('/api/stripe/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seats, workspaceId }) })
+      const payload: any = { seats, workspaceId }
+      const code = (promo || '').trim()
+      if (code) payload.promoCode = code
+      const res = await fetch('/api/stripe/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error || 'Failed to start checkout')
       if (json.url) { window.location.href = json.url; return }
@@ -148,6 +152,14 @@ const PricingSection: React.FC = () => {
               <div className="flex items-start gap-3"><Check className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" /><span className="font-body text-primary-500">Analytics & performance tracking</span></div>
               <div className="flex items-start gap-3"><Check className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" /><span className="font-body text-primary-500">Unlimited candidates & roles</span></div>
               <div className="flex items-start gap-3"><Check className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" /><span className="font-body text-primary-500">Email support</span></div>
+            </div>
+
+            {/* Promotion Code */}
+            <div className="mb-6">
+              <label className="block text-sm text-primary-400 mb-1">Promotion code</label>
+              <div className="flex gap-2">
+                <input value={promo} onChange={e=>setPromo(e.target.value)} placeholder="Enter code (optional)" className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+              </div>
             </div>
 
             <button onClick={startCheckout} disabled={loading} className={`mt-auto w-full ${brandPreview ? 'bg-blue-600 hover:bg-blue-700' : 'bg-accent-500 hover:bg-accent-600'} text-white px-6 py-4 rounded-lg font-body font-semibold transition-all duration-200 hover:translate-y-[-1px] flex items-center justify-center gap-2 group disabled:opacity-60`} aria-label="Start free trial and checkout">
