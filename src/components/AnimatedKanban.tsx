@@ -909,7 +909,7 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
   const scrollToSlide = (index: number) => {
     if (scrollContainerRef.current && !isDragging) {
       const container = scrollContainerRef.current
-      const slideWidth = 320 // w-80 = 320px
+      const slideWidth = columnWidth
       container.scrollTo({
         left: index * slideWidth,
         behavior: 'smooth'
@@ -922,7 +922,7 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
     const container = scrollContainerRef.current
     if (!container) return
     if (!isDragging) {
-      const slideWidth = 320
+      const slideWidth = columnWidth
       const scrollLeft = container.scrollLeft
       const currentIndex = Math.round(scrollLeft / slideWidth)
       setCurrentSlideIndex(currentIndex)
@@ -964,13 +964,13 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
   const nudgeLeft = () => {
     const container = scrollContainerRef.current
     if (!container) return
-    container.scrollTo({ left: Math.max(0, container.scrollLeft - 320), behavior: 'smooth' })
+    container.scrollTo({ left: Math.max(0, container.scrollLeft - columnWidth), behavior: 'smooth' })
   }
 
   const nudgeRight = () => {
     const container = scrollContainerRef.current
     if (!container) return
-    container.scrollTo({ left: container.scrollLeft + 320, behavior: 'smooth' })
+    container.scrollTo({ left: container.scrollLeft + columnWidth, behavior: 'smooth' })
   }
 
 
@@ -1108,7 +1108,7 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
           const columnWidth = containerRect.width / stages.length
           columnCenterX = containerRect.left + (index + 0.5) * columnWidth
         } else {
-          columnCenterX = containerRect.left + index * 320 + 160 - scrollLeft
+          columnCenterX = containerRect.left + index * columnWidth + (columnWidth / 2) - scrollLeft
         }
 
         const distance = Math.abs(globalX - columnCenterX)
@@ -1269,7 +1269,7 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
             <div
               ref={scrollContainerRef}
               className={`
-                flex gap-4 pb-2 snap-x snap-mandatory kanban-scroll
+                flex gap-3 sm:gap-4 pb-2 snap-x snap-mandatory kanban-scroll
                 transition-all duration-200 ease-in-out cursor-${isPanning ? 'grabbing' : 'default'}
                 ${disabled ? 'pointer-events-none select-none' : ''}
                 ${isDragging ? 'overflow-hidden touch-none select-none' : 'overflow-x-auto touch-auto'}
@@ -1314,6 +1314,14 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
             )
           })}
           {/* Empty-state button removed; we use a pulsing indicator on sidebar Add Role */}
+            </div>
+
+            {/* Scroll indicators (non-interactive overlays) */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-8 sm:w-10 transition-opacity duration-200" style={{ opacity: showLeftIndicator ? 1 : 0 }}>
+              <div className="h-full bg-gradient-to-r from-gray-200/50 to-transparent" />
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 sm:w-10 transition-opacity duration-200" style={{ opacity: showRightIndicator ? 1 : 0 }}>
+              <div className="h-full bg-gradient-to-l from-gray-200/50 to-transparent" />
             </div>
           </div>
 

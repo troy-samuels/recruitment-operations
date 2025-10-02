@@ -3,6 +3,22 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 
 export async function GET(req: NextRequest) {
   try {
+    // Simple IP-based rate limit: max 60 requests per 60s per IP
+    try {
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+      const key = `heatmap:${ip}`
+      // @ts-expect-error globalThis for ephemeral in-memory edge/runtime
+      const store = (globalThis.__rate || (globalThis.__rate = new Map<string, { c: number; t: number }>()));
+      const nowTs = Date.now()
+      const cur = store.get(key)
+      if (!cur || nowTs - cur.t > 60_000) {
+        store.set(key, { c: 1, t: nowTs })
+      } else {
+        if (cur.c >= 60) return NextResponse.json({ error: 'rate_limited' }, { status: 429 })
+        cur.c += 1
+      }
+    } catch {}
+
     const { searchParams } = new URL(req.url)
     const metric = (searchParams.get('metric') || 'stage_moves') as 'stage_moves'|'tasks_completed'
     const range = (searchParams.get('range') || '90d') as '7d'|'30d'|'90d'

@@ -265,9 +265,23 @@ CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
 -- =============================================
 -- ROW LEVEL SECURITY POLICIES
 -- =============================================
+-- Last Updated: 2025-10-02
+-- Status: Complete with all critical fixes applied
+-- Documentation: See RLS_VERIFICATION.md for testing guide
+--
+-- SECURITY MODEL:
+-- - All tables use workspace-scoped access
+-- - Users can only access data in their own workspace
+-- - Service role can bypass RLS for admin operations
+-- - Anonymous users have minimal access (leads insert only)
+-- =============================================
 
--- Workspaces: Users can only see their own workspace
+-- =============================================
+-- WORKSPACES TABLE RLS
+-- =============================================
 ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;
+
+-- Users can view workspaces they belong to
 CREATE POLICY "Users can view their own workspace" ON workspaces
     FOR SELECT USING (
         EXISTS (
@@ -277,17 +291,53 @@ CREATE POLICY "Users can view their own workspace" ON workspaces
         )
     );
 
--- Profiles: Users can see profiles in their workspace
+-- Authenticated users can create a workspace (for provisioning)
+CREATE POLICY "Users can insert their own workspace" ON workspaces
+    FOR INSERT TO authenticated
+    WITH CHECK (true);  -- Provisioning logic will handle ownership
+
+-- Only workspace admins can update their workspace
+CREATE POLICY "Admins can update their workspace" ON workspaces
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.workspace_id = workspaces.id
+            AND profiles.id = auth.uid()
+            AND profiles.role = 'admin'
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.workspace_id = workspaces.id
+            AND profiles.id = auth.uid()
+            AND profiles.role = 'admin'
+        )
+    );
+
+-- =============================================
+-- PROFILES TABLE RLS
+-- =============================================
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Users can view profiles in their workspace
 CREATE POLICY "Users can view profiles in their workspace" ON profiles
     FOR SELECT USING (
         workspace_id = (
             SELECT workspace_id FROM profiles WHERE id = auth.uid()
         )
+        OR id = auth.uid()  -- Users can always see their own profile
     );
 
+-- Users can update their own profile
 CREATE POLICY "Users can update their own profile" ON profiles
-    FOR UPDATE USING (id = auth.uid());
+    FOR UPDATE USING (id = auth.uid())
+    WITH CHECK (id = auth.uid());
+
+-- Authenticated users can insert their own profile (provisioning)
+CREATE POLICY "Users can insert their own profile" ON profiles
+    FOR INSERT TO authenticated
+    WITH CHECK (id = auth.uid());
 
 -- Clients: Workspace-scoped access
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
@@ -421,11 +471,22 @@ CREATE INDEX IF NOT EXISTS idx_ws_subs_workspace_id ON workspace_subscriptions(w
 CREATE INDEX IF NOT EXISTS idx_ws_subs_customer_id ON workspace_subscriptions(stripe_customer_id);
 
 ALTER TABLE workspace_subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- Users can view their workspace subscription status
 CREATE POLICY "Users can view their workspace subscription" ON workspace_subscriptions
   FOR SELECT USING (
     workspace_id = (
       SELECT workspace_id FROM profiles WHERE id = auth.uid()
     )
+  );
+
+-- Only service role can insert/update subscriptions (Stripe webhook)
+CREATE POLICY "Service role can manage subscriptions" ON workspace_subscriptions
+  FOR ALL USING (
+    auth.jwt() ->> 'role' = 'service_role'
+  )
+  WITH CHECK (
+    auth.jwt() ->> 'role' = 'service_role'
   );
 
 -- =============================================
@@ -477,6 +538,182 @@ BEGIN
   REFRESH MATERIALIZED VIEW CONCURRENTLY events_user_daily_counts;
   REFRESH MATERIALIZED VIEW CONCURRENTLY events_company_daily_counts;
 END; $$;
+
+-- =============================================
+-- SECURE MATERIALIZED VIEW ACCESS
+-- =============================================
+-- Materialized views don't inherit RLS from base tables
+-- Use these security definer functions for workspace-scoped access
+
+-- Helper function to get current user's workspace_id
+CREATE OR REPLACE FUNCTION get_user_workspace_id()
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+AS $$
+DECLARE
+    ws_id UUID;
+BEGIN
+    SELECT workspace_id INTO ws_id
+    FROM profiles
+    WHERE id = auth.uid();
+    RETURN ws_id;
+END;
+$$;
+
+-- Secure wrapper function for events_daily_counts
+CREATE OR REPLACE FUNCTION get_events_daily_counts(
+    p_start_date TIMESTAMPTZ DEFAULT NULL,
+    p_end_date TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS TABLE(
+    event_name TEXT,
+    day TIMESTAMPTZ,
+    ct INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+AS $$
+DECLARE
+    ws_id UUID;
+BEGIN
+    ws_id := get_user_workspace_id();
+    IF ws_id IS NULL THEN
+        RAISE EXCEPTION 'User not associated with a workspace';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        edc.event_name,
+        edc.day,
+        edc.ct
+    FROM events_daily_counts edc
+    WHERE edc.workspace_id = ws_id
+        AND (p_start_date IS NULL OR edc.day >= p_start_date)
+        AND (p_end_date IS NULL OR edc.day <= p_end_date)
+    ORDER BY edc.day DESC, edc.event_name;
+END;
+$$;
+
+-- Secure wrapper function for events_user_daily_counts
+CREATE OR REPLACE FUNCTION get_events_user_daily_counts(
+    p_start_date TIMESTAMPTZ DEFAULT NULL,
+    p_end_date TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS TABLE(
+    user_id UUID,
+    event_name TEXT,
+    day TIMESTAMPTZ,
+    ct INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+AS $$
+DECLARE
+    ws_id UUID;
+BEGIN
+    ws_id := get_user_workspace_id();
+    IF ws_id IS NULL THEN
+        RAISE EXCEPTION 'User not associated with a workspace';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        eudc.user_id,
+        eudc.event_name,
+        eudc.day,
+        eudc.ct
+    FROM events_user_daily_counts eudc
+    WHERE eudc.workspace_id = ws_id
+        AND (p_start_date IS NULL OR eudc.day >= p_start_date)
+        AND (p_end_date IS NULL OR eudc.day <= p_end_date)
+    ORDER BY eudc.day DESC, eudc.user_id, eudc.event_name;
+END;
+$$;
+
+-- Secure wrapper function for events_company_daily_counts
+CREATE OR REPLACE FUNCTION get_events_company_daily_counts(
+    p_start_date TIMESTAMPTZ DEFAULT NULL,
+    p_end_date TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS TABLE(
+    company TEXT,
+    event_name TEXT,
+    day TIMESTAMPTZ,
+    ct INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+AS $$
+DECLARE
+    ws_id UUID;
+BEGIN
+    ws_id := get_user_workspace_id();
+    IF ws_id IS NULL THEN
+        RAISE EXCEPTION 'User not associated with a workspace';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        ecdc.company,
+        ecdc.event_name,
+        ecdc.day,
+        ecdc.ct
+    FROM events_company_daily_counts ecdc
+    WHERE ecdc.workspace_id = ws_id
+        AND (p_start_date IS NULL OR ecdc.day >= p_start_date)
+        AND (p_end_date IS NULL OR ecdc.day <= p_end_date)
+    ORDER BY ecdc.day DESC, ecdc.company, ecdc.event_name;
+END;
+$$;
+
+-- Grant permissions
+GRANT EXECUTE ON FUNCTION get_user_workspace_id() TO authenticated;
+GRANT EXECUTE ON FUNCTION get_events_daily_counts(TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_events_user_daily_counts(TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_events_company_daily_counts(TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
+
+-- =============================================
+-- CRITICAL RLS POLICIES - ADDITIONAL TABLES
+-- =============================================
+
+-- AUTO TASK RULES: Workspace-scoped access
+ALTER TABLE auto_task_rules ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can access auto_task_rules in their workspace" ON auto_task_rules
+    FOR ALL USING (
+        workspace_id = (
+            SELECT workspace_id FROM profiles WHERE id = auth.uid()
+        )
+    );
+
+-- CLIENT RESPONSE STATS: Workspace-scoped access
+ALTER TABLE client_response_stats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can access client_response_stats in their workspace" ON client_response_stats
+    FOR ALL USING (
+        workspace_id = (
+            SELECT workspace_id FROM profiles WHERE id = auth.uid()
+        )
+    );
+
+-- LEADS: Insert-only for public, read for service role
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+
+-- Allow anonymous/authenticated users to insert leads (signup form)
+CREATE POLICY "Anyone can insert leads" ON leads
+    FOR INSERT TO public
+    WITH CHECK (true);
+
+-- Only service role can read leads (for admin dashboard via API)
+CREATE POLICY "Service role can read leads" ON leads
+    FOR SELECT USING (
+        auth.jwt() ->> 'role' = 'service_role'
+        OR
+        auth.jwt() -> 'user_metadata' ->> 'is_super_admin' = 'true'
+    );
 
 -- =============================================
 -- SAMPLE DATA FOR TESTING

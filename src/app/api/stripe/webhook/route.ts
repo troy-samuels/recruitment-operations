@@ -54,6 +54,15 @@ export async function POST(req: NextRequest) {
             }, { onConflict: 'stripe_subscription_id' })
             // Update workspace tier based on seats
             await admin.from('workspaces').update({ subscription_tier: seats > 1 ? 'agency' : 'professional' }).eq('id', wsId)
+            // Signal paid access via cookie on next request
+            try {
+              // we cannot set cookies directly from the webhook; mark via events for client to read
+              await admin.from('events').insert({
+                workspace_id: wsId as any,
+                event_name: 'payment_method_collected',
+                meta: { source: 'webhook', seats, price }
+              } as any)
+            } catch {}
           }
         }
 

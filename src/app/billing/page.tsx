@@ -1,9 +1,12 @@
 "use client"
 import React from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Minus, Plus } from 'lucide-react'
 
 export default function BillingPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [tier, setTier] = React.useState('individual')
   const [seatsPurchased, setSeatsPurchased] = React.useState(1)
   const [seatsUsed, setSeatsUsed] = React.useState(1)
@@ -24,6 +27,18 @@ export default function BillingPage() {
   React.useEffect(() => {
     fetch('/api/stripe/pricing').then(r=>r.json()).then(j=>{ if (j?.price) setPrice(j.price) }).catch(()=>{})
   }, [])
+
+  // Secure success flow: exchange session_id for server-verified cookie then redirect
+  React.useEffect(() => {
+    const sessionId = searchParams?.get('session_id')
+    if (!sessionId) return
+    (async () => {
+      try {
+        const res = await fetch('/api/stripe/success', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: sessionId }) })
+        if (res.ok) router.replace('/dashboard')
+      } catch {}
+    })()
+  }, [searchParams, router])
 
   const calcPerSeat = React.useCallback((q: number): number => {
     if (!price) return 0

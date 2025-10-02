@@ -111,6 +111,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 	const signOut = React.useCallback(async () => {
 		await supabase.auth.signOut()
+		try { document.cookie = 'ro_paid=; Path=/; Max-Age=0; SameSite=Lax' } catch {}
 	}, [supabase])
 
 	const value: AuthContextValue = {

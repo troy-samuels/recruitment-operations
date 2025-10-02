@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/resend'
+import { checkRateLimit, createRateLimitResponse, RateLimits } from '@/lib/rateLimit'
 
 /**
  * Test endpoint for Resend email integration
  *
  * Usage: POST /api/email/test
  * Body: { to: 'email@example.com' }
+ *
+ * Rate Limit: 20 requests per hour per IP
  */
 export async function POST(req: NextRequest) {
+  // Apply rate limiting
+  const { limited, remaining, reset } = checkRateLimit(req, RateLimits.EMAIL)
+  if (limited) {
+    return createRateLimitResponse(remaining, reset, true)
+  }
   try {
     const body = await req.json().catch(() => ({}))
     const { to } = body
@@ -39,14 +47,17 @@ export async function POST(req: NextRequest) {
       `,
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       message: 'Test email sent successfully!',
       result,
     })
+    response.headers.set('X-RateLimit-Remaining', remaining.toString())
+    response.headers.set('X-RateLimit-Reset', reset.toString())
+    return response
   } catch (error: any) {
     console.error('[Email Test] Error:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         ok: false,
         error: error.message || 'Failed to send test email',
@@ -54,5 +65,8 @@ export async function POST(req: NextRequest) {
       },
       { status: 500 }
     )
+    response.headers.set('X-RateLimit-Remaining', remaining.toString())
+    response.headers.set('X-RateLimit-Reset', reset.toString())
+    return response
   }
 }

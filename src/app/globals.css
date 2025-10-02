@@ -22,6 +22,15 @@
 }
 
 @layer components {
+  /* Small device tweaks */
+  @screen sm {
+  }
+  @media (max-width: 360px) {
+    h1 { font-size: 2rem; line-height: 2.25rem; }
+    h2 { font-size: 1.375rem; line-height: 1.75rem; }
+    .hero-sub { font-size: 0.95rem; }
+    .btn { padding-left: 0.875rem; padding-right: 0.875rem; padding-top: 0.625rem; padding-bottom: 0.625rem; }
+  }
   @keyframes slideIn {
     from {
       opacity: 0;

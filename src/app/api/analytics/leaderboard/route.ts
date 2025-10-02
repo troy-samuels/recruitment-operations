@@ -3,6 +3,22 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 
 export async function GET(req: NextRequest) {
   try {
+    // Simple rate limiter: 60 req/min per IP
+    try {
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+      const key = `leaderboard:${ip}`
+      // @ts-expect-error global store
+      const store = (globalThis.__rate || (globalThis.__rate = new Map<string, { c: number; t: number }>()));
+      const nowTs = Date.now()
+      const cur = store.get(key)
+      if (!cur || nowTs - cur.t > 60_000) {
+        store.set(key, { c: 1, t: nowTs })
+      } else {
+        if (cur.c >= 60) return NextResponse.json({ error: 'rate_limited' }, { status: 429 })
+        cur.c += 1
+      }
+    } catch {}
+
     const { searchParams } = new URL(req.url)
     const type = (searchParams.get('type') || 'teammates') as 'teammates'|'companies'
     const range = (searchParams.get('range') || '30d') as '7d'|'30d'|'90d'

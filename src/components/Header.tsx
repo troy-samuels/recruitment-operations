@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
             <a href="/login" className="font-body text-primary-400 hover:text-primary-500 transition-all duration-200 px-4 py-2 rounded-lg hover:bg-cream-50">
               Sign in
             </a>
-            <a href="/get-started" className="font-body bg-accent-500 text-white px-6 py-2 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
+            <a href="/onboarding" className="font-body bg-accent-500 text-white px-6 py-2 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
               Get Started
             </a>
           </div>
@@ -114,7 +114,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                 <a href="/login" className="font-body text-primary-400 hover:text-primary-500 transition-all duration-200 text-left px-4 py-2 rounded-lg hover:bg-cream-50">
                   Sign in
                 </a>
-                <a href="/get-started" className="font-body bg-accent-500 text-white px-6 py-2 rounded-lg hover:bg-accent-600 transition-all duration-200 text-left shadow-sm">
+                <a href="/onboarding" className="font-body bg-accent-500 text-white px-6 py-2 rounded-lg hover:bg-accent-600 transition-all duration-200 text-left shadow-sm">
                   Get Started
                 </a>
               </div>

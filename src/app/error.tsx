@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+
 export default function Error({
   error,
   reset,
@@ -7,6 +9,19 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    // Log error to console (visible in Vercel logs)
+    console.error('[Error Boundary]', {
+      message: error.message,
+      stack: error.stack,
+      digest: error.digest,
+      timestamp: new Date().toISOString(),
+    })
+
+    // In production, you could send to error tracking service here
+    // Example: Sentry.captureException(error)
+  }, [error])
+
   return (
     <div style={{
       display: 'flex',

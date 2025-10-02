@@ -731,12 +731,41 @@ VITE_FEATURE_TEAM_COLLABORATION=false
 4. **Input Validation** - sanitize all user inputs
 5. **HTTPS Only** - enforce secure connections
 
-## 📚 Key Documentation Files
+## 📚 Documentation Structure
 
+### Core Documentation (Root)
 - **CLAUDE.md** (this file): AI development guide with architecture & patterns
 - **TECHNICAL_BUILD.md**: Detailed technical documentation (39KB, 900+ lines)
 - **business plan.md**: Market analysis, go-to-market strategy (15KB, 250+ lines)
 - **test-drag-drop.md**: Drag & drop testing notes
+
+### Organized Documentation (`docs/`)
+**Quick Index**: See [`docs/README.md`](docs/README.md) for full navigation
+
+**Deployment** (`docs/deployment/`):
+- **DEPLOYMENT_GUIDE.md**: Production deployment walkthrough with troubleshooting
+
+**Infrastructure** (`docs/infrastructure/`):
+- **STRIPE_SETUP.md**: Complete Stripe integration guide (testing & production)
+- **SUPABASE_PRODUCTION_CONFIG.md**: Supabase configuration checklist
+- **RLS_DEPLOYMENT_GUIDE.md**: Row Level Security implementation
+- **RLS_VERIFICATION.md**: RLS testing procedures
+
+**Operations** (`docs/operations/`):
+- **MONITORING.md**: Error tracking & analytics setup (Vercel, Plausible)
+- **BACKUP_RECOVERY.md**: Backup strategy & disaster recovery
+- **RATE_LIMITING.md**: API rate limiting configuration
+- **ANALYTICS.md**: Analytics tracking implementation
+
+**Standards** (`docs/standards/`):
+- **ACCESSIBILITY.md**: WCAG 2.1 AA compliance guide
+
+**Archive** (`docs/archive/`):
+- Historical deployment guides (Oct 1-2, 2025)
+- Stripe troubleshooting reports
+- Setup completion reports
+
+**Documentation Stats**: 31 files, ~300KB total | See `docs/README.md` for full index
 
 ## 🔗 Important Links
 
@@ -750,28 +779,177 @@ VITE_FEATURE_TEAM_COLLABORATION=false
 ## 🎯 Current Development Status
 
 **Version**: 0.1.0
-**Status**: Active development, production-ready core features
-**Deployment**: Vercel (jobwall.co.uk)
+**Status**: ✅ Production Ready | Active Development
+**Deployment**: Vercel (https://jobwall.co.uk)
 **Database**: Supabase production instance
-**Payments**: Stripe test mode (ready for production)
+**Payments**: Stripe live mode configured
 
-**Completed Features:**
-✅ Full authentication flow (magic link, OAuth)
-✅ Drag-and-drop Kanban board with 6 stages
-✅ Team management with permissions
-✅ Billing integration with Stripe (7-day trial)
-✅ Analytics tracking with privacy respect
-✅ Landing page with all sections
-✅ Onboarding flow with configuration
-✅ Urgent actions & task management
-✅ Client response learning
-✅ Mobile-responsive design
+### Completed Features ✅
+- **Authentication**: Magic link, Google OAuth, Azure OAuth
+- **Dashboard**: Drag-and-drop Kanban board with 6 pipeline stages
+- **Team Management**: Multi-user workspaces with role-based permissions
+- **Billing**: Stripe integration with 7-day trial (£149/£399 pricing)
+- **Analytics**: Privacy-friendly event tracking (Vercel + Plausible)
+- **Landing Page**: Full marketing site with features, pricing, FAQ
+- **Onboarding**: Quarter setup, targets, rules configuration
+- **Smart Features**: Urgent actions, task management, client response learning
+- **Mobile Responsive**: 320px-768px optimized design
+- **Security**: Supabase RLS, HTTPS enforcement, security headers
+- **Automation**: Cron jobs for analytics refresh (every 6h) and health checks (every 10m)
 
-**Next Up (Feature Flags Off):**
-🔲 AI-powered insights
-🔲 Calendar integration
-🔲 Email automation
-🔲 Advanced team collaboration
+### Development Setup ✅
+- **CRON_SECRET**: Configured for local cron endpoint testing
+- **Stripe CLI**: Installed (v1.31.0) with testing workflows documented
+- **Environment**: `.env.local` configured with test/live keys backup
+- **Documentation**: Consolidated into organized `docs/` structure (31 files, 300KB)
+
+### Production Configuration ✅
+- **Domain**: jobwall.co.uk (DNS configured)
+- **Region**: Washington DC (iad1) for optimal Stripe connectivity
+- **Environment Variables**: 12 variables set (Supabase, Stripe, CRON_SECRET)
+- **Cron Jobs**: Analytics refresh + health monitoring active
+- **Monitoring**: Vercel Analytics + Speed Insights enabled
+
+### Recent Updates (October 2, 2025)
+- ✅ Resolved Stripe connectivity issue (region change lhr1 → iad1)
+- ✅ Implemented CRON_SECRET for secure cron job authentication
+- ✅ Consolidated 25 markdown files → 11 organized docs + archive
+- ✅ Created comprehensive docs index (docs/README.md)
+- ✅ Updated CLAUDE.md with current status and documentation structure
+
+### Next Up (Feature Flags Off) 🔲
+- AI-powered insights
+- Calendar integration
+- Email automation
+- Advanced team collaboration (real-time)
+
+---
+
+## 🧪 Testing & Local Development
+
+### Quick Start
+```bash
+# Start development server
+npm run dev  # Runs on http://localhost:3000
+
+# Test cron endpoints (requires CRON_SECRET)
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/health
+
+# Test Stripe locally (requires Stripe CLI)
+stripe listen --forward-to http://localhost:3000/api/stripe/webhook
+```
+
+### Stripe Testing Workflow
+
+**Prerequisites**: See `docs/infrastructure/STRIPE_SETUP.md` for complete setup
+
+**Quick Test**:
+1. Ensure `.env.local` has TEST keys (not live keys!)
+2. Start webhook listener: `stripe listen --forward-to http://localhost:3000/api/stripe/webhook`
+3. Copy webhook secret (whsec_...) to `.env.local` as `STRIPE_WEBHOOK_SECRET`
+4. Restart dev server
+5. Test checkout at http://localhost:3000/billing
+6. Use test card: `4242 4242 4242 4242`
+
+**Verification**:
+- Terminal 2 shows webhook events received
+- Supabase Dashboard → `workspace_subscriptions` table shows test records
+- Database entries have `cus_test_...` and `sub_test_...` IDs
+
+### Database Testing
+
+**Local Testing** (uses production Supabase):
+- All data scoped by workspace via RLS policies
+- Test with dedicated test workspace ID
+- Query examples in `docs/infrastructure/RLS_VERIFICATION.md`
+
+**Verification Queries**:
+```sql
+-- Check user's workspace access
+SELECT * FROM workspaces WHERE owner_id = auth.uid();
+
+-- Verify RLS policies
+SELECT * FROM workspace_subscriptions WHERE workspace_id = 'your-test-workspace-id';
+```
+
+### Environment Variables
+
+**Development** (`.env.local`):
+- Supabase: Production instance keys
+- Stripe: **TEST keys** (pk_test_..., sk_test_...)
+- CRON_SECRET: Local testing secret
+- Backup: `.env.local.backup-live-keys` (for recovery)
+
+**Production** (Vercel):
+- Supabase: Same production keys
+- Stripe: **LIVE keys** (pk_live_..., sk_live_...)
+- CRON_SECRET: Production secret
+- All vars managed via Vercel Dashboard or CLI
+
+### Cron Job Testing
+
+**Manual Trigger** (local):
+```bash
+# Health check
+curl "http://localhost:3000/api/cron/health?key=$(node -e "console.log(encodeURIComponent('$CRON_SECRET'))")"
+
+# Analytics refresh
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/refresh-analytics
+```
+
+**Production Monitoring**:
+```bash
+npx vercel logs --follow | grep cron
+```
+
+### Common Development Tasks
+
+**Build & Deploy**:
+```bash
+npm run build    # Verify build passes
+npm run lint     # Check TypeScript & accessibility
+npx vercel --prod  # Deploy to production
+```
+
+**Database Migrations**:
+- Run SQL scripts via Supabase Dashboard SQL Editor
+- Test queries in test workspace first
+- Document changes in `docs/infrastructure/`
+
+**API Testing**:
+```bash
+# Test billing status
+curl http://localhost:3000/api/billing/status?workspaceId=uuid
+
+# Test Stripe pricing
+curl http://localhost:3000/api/stripe/pricing
+
+# Test analytics
+curl http://localhost:3000/api/analytics/summary?workspaceId=uuid
+```
+
+### Troubleshooting
+
+**Port 3000 in use**:
+- Next.js will auto-increment to 3001
+- Or kill process: `lsof -ti:3000 | xargs kill`
+
+**Stripe webhook not receiving events**:
+1. Verify `stripe listen` is running
+2. Check webhook secret matches .env.local
+3. Restart dev server after env changes
+
+**Database access denied**:
+- Verify RLS policies allow access
+- Check workspace_id matches user's workspace
+- Use service role key for admin operations
+
+**Build errors**:
+- Clear `.next/` directory: `rm -rf .next`
+- Delete node_modules and reinstall: `rm -rf node_modules && npm install`
+- Check TypeScript errors: `npm run lint`
+
+See `docs/` for detailed troubleshooting guides per component.
 
 ---
 

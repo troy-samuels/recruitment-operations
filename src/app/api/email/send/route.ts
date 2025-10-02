@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail, sendWelcomeEmail, sendActivityReminderEmail } from '@/lib/resend'
+import { checkRateLimit, createRateLimitResponse, RateLimits } from '@/lib/rateLimit'
 
 /**
  * API endpoint to send custom emails using Resend
@@ -7,8 +8,15 @@ import { sendEmail, sendWelcomeEmail, sendActivityReminderEmail } from '@/lib/re
  * Usage:
  * POST /api/email/send
  * Body: { type: 'welcome' | 'reminder' | 'custom', ... }
+ *
+ * Rate Limit: 20 requests per hour per IP
  */
 export async function POST(req: NextRequest) {
+  // Apply rate limiting
+  const { limited, remaining, reset } = checkRateLimit(req, RateLimits.EMAIL)
+  if (limited) {
+    return createRateLimitResponse(remaining, reset, true)
+  }
   try {
     const body = await req.json().catch(() => ({}))
     const { type, to, subject, html, data } = body
@@ -71,12 +79,18 @@ export async function POST(req: NextRequest) {
         )
     }
 
-    return NextResponse.json({ ok: true, result })
+    const response = NextResponse.json({ ok: true, result })
+    response.headers.set('X-RateLimit-Remaining', remaining.toString())
+    response.headers.set('X-RateLimit-Reset', reset.toString())
+    return response
   } catch (error: any) {
     console.error('[Email API] Error:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { ok: false, error: error.message || 'Failed to send email' },
       { status: 500 }
     )
+    response.headers.set('X-RateLimit-Remaining', remaining.toString())
+    response.headers.set('X-RateLimit-Reset', reset.toString())
+    return response
   }
 }

@@ -13,19 +13,20 @@ export function middleware(req: NextRequest) {
 	if (!needsAuth) return NextResponse.next()
 
 	const hasSession = req.cookies.get('ro_session')?.value === '1'
-	const isGuest = req.cookies.get('ro_guest')?.value === '1'
+	const hasPaid = req.cookies.get('ro_paid')?.value === '1'
 	// Debug: log decisions in dev only
-	try { if (process.env.NODE_ENV !== 'production') console.log('[middleware]', { pathname, hasSession, isGuest }) } catch {}
-	if (hasSession || isGuest) {
+	try { if (process.env.NODE_ENV !== 'production') console.log('[middleware]', { pathname, hasSession, hasPaid }) } catch {}
+
+	if (hasSession && hasPaid) {
 		const res = NextResponse.next()
 		res.headers.set('x-ro-guard', 'allowed')
 		return res
 	}
 
 	const url = req.nextUrl.clone()
-	url.pathname = '/onboarding'
+	url.pathname = hasSession ? '/billing' : '/onboarding'
 	const res = NextResponse.redirect(url)
-	res.headers.set('x-ro-guard', 'redirect')
+	res.headers.set('x-ro-guard', hasSession ? 'redirect-billing' : 'redirect-onboarding')
 	return res
 }
 
