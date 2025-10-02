@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
     const workspaceId = body?.workspaceId || null
     if (!priceId) return NextResponse.json({ error: 'Missing priceId' }, { status: 400 })
 
-    const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    // Derive origin from request URL to ensure a valid https production URL
+    let origin = process.env.NEXT_PUBLIC_SITE_URL || ''
+    try { origin = new URL(req.url).origin } catch {}
+    if (!origin) origin = 'https://jobwall.co.uk'
 
     // Build form-encoded payload for Stripe REST API
     const params = new URLSearchParams()
