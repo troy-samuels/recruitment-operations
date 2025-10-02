@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const seats = Math.max(1, Number(body?.seats || 1))
     const priceId = body?.priceId || process.env.STRIPE_DEFAULT_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID
     const workspaceId = body?.workspaceId || null
-    const promoCode = typeof body?.promoCode === 'string' ? body.promoCode.trim() : undefined
+    // Let customers enter promo codes directly in Stripe Checkout UI
     if (!priceId) return NextResponse.json({ error: 'Missing priceId' }, { status: 400 })
 
     const stripe = new Stripe(secretKey, {
@@ -30,7 +30,6 @@ export async function POST(req: NextRequest) {
       cancel_url: `${origin}/billing?canceled=1`,
       allow_promotion_codes: true,
       payment_method_collection: 'always',
-      discounts: promoCode ? [{ promotion_code: promoCode }] : undefined,
       metadata: { seats: String(seats), ...(workspaceId ? { workspace_id: workspaceId } : {}) },
       subscription_data: {
         trial_period_days: 7,
