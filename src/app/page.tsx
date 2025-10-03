@@ -73,8 +73,8 @@ export default function Home() {
           </div>
 
           {/* Dashboard Preview */}
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-            <PreviewDashboard />
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden pb-4 sm:pb-6">
+            <PreviewDashboard compact />
           </div>
 
           {/* CTA Below Preview */}

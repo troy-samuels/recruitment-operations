@@ -172,3 +172,11 @@
     transform: scale(1.2);
   }
 }
+
+/* Compact demo embed tweaks */
+.demo-embed .kanban-scroll {
+  gap: 0.5rem;
+}
+.demo-embed .kanban-column {
+  min-width: 240px;
+}
