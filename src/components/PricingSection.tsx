@@ -5,6 +5,8 @@ import { trackEvent } from '@/lib/metrics'
 import { Check, Star, Zap, Users, Shield, ChevronRight, Minus, Plus } from 'lucide-react'
 
 const formatGBP = (p: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 2 }).format(p / 100)
+const FIRST_SEAT_PENCE = 3900
+const ADDL_SEAT_PENCE = 2900
 
 const PricingSection: React.FC = () => {
   const [seats, setSeats] = React.useState<number>(1)
@@ -29,21 +31,12 @@ const PricingSection: React.FC = () => {
     }).catch(()=>{})
   }, [])
 
-  const calcPerSeat = React.useCallback((q: number): number => {
-    if (!price) return 0
-    // Tiered volume: the tier whose up_to >= q applies
-    const tiers = price.tiers || []
-    if (price.billing_scheme === 'tiered' && price.tiers_mode === 'volume' && tiers.length > 0) {
-      const sorted = [...tiers].sort((a,b)=> (a.up_to ?? Number.POSITIVE_INFINITY) - (b.up_to ?? Number.POSITIVE_INFINITY))
-      const tier = sorted.find(t => (t.up_to ?? Number.POSITIVE_INFINITY) >= q) || sorted[sorted.length-1]
-      return tier.unit_amount || 0
-    }
-    // Flat pricing
-    return price.unit_amount || 0
-  }, [price])
-
-  const perSeat = calcPerSeat(seats)
-  const total = perSeat * seats
+  // Business rule: first seat £39/mo, each additional seat £29/mo (UI)
+  const total = React.useMemo(() => {
+    if (seats <= 0) return 0
+    if (seats === 1) return FIRST_SEAT_PENCE
+    return FIRST_SEAT_PENCE + (seats - 1) * ADDL_SEAT_PENCE
+  }, [seats])
 
   const adjust = (d: number) => {
     setSeats(s => {
@@ -97,6 +90,22 @@ const PricingSection: React.FC = () => {
           </div>
         </div>
 
+        {/* Price highlight */}
+        <div className="max-w-3xl mx-auto mb-12">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm text-center px-6 py-8">
+            <div className="flex items-end justify-center gap-2">
+              <span className="font-heading text-5xl sm:text-6xl font-extrabold text-primary-500">{formatGBP(FIRST_SEAT_PENCE)}</span>
+              <span className="font-body text-primary-400 sm:text-lg">/month</span>
+            </div>
+            <div className="mt-2 font-body text-primary-400">
+              + {formatGBP(ADDL_SEAT_PENCE)} for each additional seat
+            </div>
+            <div className="mt-6">
+              <button onClick={startCheckout} className={`w-full sm:w-auto inline-flex items-center justify-center ${brandPreview ? 'bg-blue-600 hover:bg-blue-700' : 'bg-accent-500 hover:bg-accent-600'} text-white px-6 py-3 rounded-lg font-body font-semibold transition-colors`}>Get 7 Days Free</button>
+            </div>
+          </div>
+        </div>
+
         {/* Pricing Cards */}
         <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16 items-stretch">
           {/* Professional Plan */}
@@ -118,16 +127,12 @@ const PricingSection: React.FC = () => {
 
               <div className="mb-3 leading-tight">
                 <div>
-                  <span className="font-body text-5xl font-bold text-primary-500">{perSeat ? formatGBP(perSeat) : '—'}</span>
+                  <span className="font-body text-5xl font-bold text-primary-500">{formatGBP(total)}</span>
                 </div>
-                <div className="font-body text-sm sm:text-lg text-primary-400">/seat/month</div>
+                <div className="font-body text-sm sm:text-base text-primary-400">Total / month</div>
               </div>
               <div className="text-sm text-primary-400">
-                {price?.tiers_mode === 'volume' && price?.billing_scheme === 'tiered' ? (
-                  <span>Tiered: per-seat price drops at higher seat counts.</span>
-                ) : (
-                  <span>Flat pricing per seat.</span>
-                )}
+                First seat {formatGBP(FIRST_SEAT_PENCE)} per month, additional seats {formatGBP(ADDL_SEAT_PENCE)} each.
               </div>
             </div>
 
@@ -140,8 +145,7 @@ const PricingSection: React.FC = () => {
                 <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50" onClick={()=>adjust(1)} aria-label="Increase seats"><Plus className="w-4 h-4" /></button>
               </div>
               <div className="mt-3 text-center text-primary-500">
-                <div className="text-sm">Per seat: <span className="font-semibold">{perSeat ? formatGBP(perSeat) : '—'}</span></div>
-                <div className="text-sm">{seats} × {perSeat ? formatGBP(perSeat) : '—'} = <span className="font-semibold">{total ? formatGBP(total) : '—'}</span>/mo</div>
+                <div className="text-sm font-semibold">Total: {formatGBP(total)}/mo</div>
                 <div className="text-xs text-primary-400 mt-1">Card saved today, billed after 7 days. Cancel anytime.</div>
               </div>
             </div>
