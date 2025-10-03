@@ -90,38 +90,11 @@ const PricingSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Price highlight */}
-        <div className="max-w-3xl mx-auto mb-12">
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm text-center px-6 py-8">
-            <div className="flex items-end justify-center gap-2">
-              <span className="font-heading text-5xl sm:text-6xl font-extrabold text-primary-500">{formatGBP(FIRST_SEAT_PENCE)}</span>
-              <span className="font-body text-primary-400 sm:text-lg">/month</span>
-            </div>
-            <div className="mt-2 font-body text-primary-400">
-              + {formatGBP(ADDL_SEAT_PENCE)} for each additional seat
-            </div>
-            <div className="mt-6">
-              <button onClick={startCheckout} className={`w-full sm:w-auto inline-flex items-center justify-center ${brandPreview ? 'bg-blue-600 hover:bg-blue-700' : 'bg-accent-500 hover:bg-accent-600'} text-white px-6 py-3 rounded-lg font-body font-semibold transition-colors`}>Get 7 Days Free</button>
-            </div>
-          </div>
-        </div>
-
         {/* Pricing Cards */}
         <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16 items-stretch">
           {/* Professional Plan */}
           <div className={`bg-white rounded-2xl border ${brandPreview ? 'border-blue-200' : 'border-gray-200'} p-8 shadow-lg hover:shadow-xl transition-all duration-300 relative h-full flex flex-col`}>
-            {/* Popular Badge */}
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <div className="bg-accent-500 text-white px-4 py-1 rounded-full text-sm font-body font-semibold flex items-center gap-1">
-                <Star className="w-3 h-3 fill-current" />
-                Most Popular
-              </div>
-            </div>
-
             <div className="text-center mb-8">
-              <div className={`w-16 h-16 ${brandPreview ? 'bg-blue-100' : 'bg-accent-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                <Zap className={`w-8 h-8 ${brandPreview ? 'text-blue-600' : 'text-accent-500'}`} />
-              </div>
               <h3 className="font-body text-2xl font-bold text-primary-500 mb-2">Professional</h3>
               <p className="font-body text-primary-400 mb-6">Perfect for individual recruiters</p>
 
