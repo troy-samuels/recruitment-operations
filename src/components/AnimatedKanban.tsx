@@ -284,13 +284,15 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, isOverlay = false, 
               {tasksCount}
             </span>
           )}
-          <button
-            onClick={(e)=>{ e.preventDefault(); e.stopPropagation(); onOpenEditor && onOpenEditor(card.id) }}
-            className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-            aria-label="Edit card"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
+          {onOpenEditor && (
+            <button
+              onClick={(e)=>{ e.preventDefault(); e.stopPropagation(); onOpenEditor && onOpenEditor(card.id) }}
+              className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+              aria-label="Edit card"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
       {/* Inline content removed; editor opens as popup elsewhere */}
@@ -1319,7 +1321,7 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
                   color={stage.color}
                   cards={stageCards}
                   isOver={overId === `column-${stage.stage}`}
-                  onOpenEditor={handleOpen}
+                  onOpenEditor={onOpenEditor ? handleOpen : undefined}
                   density={'comfortable'}
                   taskCountByCard={Object.fromEntries(stageCards.map(c => [c.id, (tasksByCard[c.id] || []).length]))}
                 />

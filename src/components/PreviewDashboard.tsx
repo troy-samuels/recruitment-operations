@@ -22,7 +22,7 @@ const PreviewDashboard: React.FC<PreviewDashboardProps> = ({ compact = false }) 
       <WorkspaceProvider>
         <div className="demo-embed bg-gray-100 h-[420px] sm:h-[520px] overflow-hidden">
           <div className="h-full p-2 sm:p-3">
-            <AnimatedKanban leftCollapsed rightCollapsed />
+            <AnimatedKanban leftCollapsed rightCollapsed disabled />
           </div>
         </div>
       </WorkspaceProvider>
