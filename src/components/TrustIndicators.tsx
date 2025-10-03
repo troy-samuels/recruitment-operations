@@ -44,34 +44,34 @@ const TrustIndicators: React.FC = () => {
 
           {/* Active Consultants */}
           <div className="text-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-accent-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-6 h-6 text-accent-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{activeConsultants}</div>
             <p className="font-body text-sm text-gray-600">Active consultants</p>
             <div className="flex items-center justify-center gap-1 mt-2">
-              <TrendingUp className="w-3 h-3 text-green-500" />
-              <span className="font-body text-xs text-green-600">Growing weekly</span>
+              <TrendingUp className="w-3 h-3 text-success-500" />
+              <span className="font-body text-xs text-success-500">Growing weekly</span>
             </div>
           </div>
 
           {/* Candidates Tracked */}
           <div className="text-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Activity className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-success-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Activity className="w-6 h-6 text-success-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{candidatesTracked}</div>
             <p className="font-body text-sm text-gray-600">Candidates tracked today</p>
             <div className="flex items-center justify-center gap-1 mt-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div>
               <span className="font-body text-xs text-gray-500">Live</span>
             </div>
           </div>
 
           {/* Geographic Coverage */}
           <div className="text-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MapPin className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MapPin className="w-6 h-6 text-primary-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">8</div>
             <p className="font-body text-sm text-gray-600">UK cities</p>
@@ -80,8 +80,8 @@ const TrustIndicators: React.FC = () => {
 
           {/* Revenue Secured */}
           <div className="text-center p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-6 h-6 text-yellow-600" />
+            <div className="w-12 h-12 bg-accent-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-6 h-6 text-accent-500" />
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">£89k</div>
             <p className="font-body text-sm text-gray-600">Placements secured this month</p>
@@ -95,7 +95,7 @@ const TrustIndicators: React.FC = () => {
           <div className="grid md:grid-cols-3 gap-8 text-center">
 
             <div className="flex flex-col items-center">
-              <Shield className="w-8 h-8 text-blue-600 mb-3" />
+              <Shield className="w-8 h-8 text-primary-500 mb-3" />
               <h4 className="font-body font-semibold text-gray-900 mb-2">Built by Recruitment Professionals</h4>
               <p className="font-body text-sm text-gray-600">
                 Created by former consultants who understand your daily challenges
@@ -103,7 +103,7 @@ const TrustIndicators: React.FC = () => {
             </div>
 
             <div className="flex flex-col items-center">
-              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mb-3">
+              <div className="w-8 h-8 bg-success-500 rounded-full flex items-center justify-center mb-3">
                 <CheckCircle className="w-5 h-5 text-white" />
               </div>
               <h4 className="font-body font-semibold text-gray-900 mb-2">GDPR Compliant</h4>
@@ -113,7 +113,7 @@ const TrustIndicators: React.FC = () => {
             </div>
 
             <div className="flex flex-col items-center">
-              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center mb-3">
+              <div className="w-8 h-8 bg-accent-500 rounded-full flex items-center justify-center mb-3">
                 <span className="text-white font-bold text-sm">14</span>
               </div>
               <h4 className="font-body font-semibold text-gray-900 mb-2">14-Day Free Trial</h4>
