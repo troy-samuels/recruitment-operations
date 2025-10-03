@@ -14,13 +14,13 @@ const FAQSection: React.FC = () => {
 
   const faqs: FAQItem[] = [
     {
-      question: "How does RecruitOps prevent lost placements?",
-      answer: "RecruitOps provides real-time visibility into your entire recruitment pipeline, automatically tracking candidate interactions and sending smart reminders when follow-ups are needed. Our system identifies at-risk placements before they're lost, giving you the opportunity to take corrective action. The drag-and-drop Kanban board ensures nothing falls through the cracks.",
+      question: "How does Jobwall prevent lost placements?",
+      answer: "Jobwall provides real-time visibility into your entire recruitment pipeline, automatically tracking candidate interactions and sending smart reminders when follow-ups are needed. Our system identifies at-risk placements before they're lost, giving you the opportunity to take corrective action. The drag-and-drop Kanban board ensures nothing falls through the cracks.",
       category: "general"
     },
     {
-      question: "Can I try RecruitOps before purchasing?",
-      answer: "Absolutely! We offer a 7-day free trial with no credit card required. You'll have access to all features so you can see firsthand how RecruitOps transforms your pipeline management. Many users see immediate improvements in their first week.",
+      question: "Can I try Jobwall before purchasing?",
+      answer: "Absolutely! We offer a 7-day free trial with no credit card required. You'll have access to all features so you can see firsthand how Jobwall transforms your pipeline management. Many users see immediate improvements in their first week.",
       category: "pricing"
     },
     {
@@ -29,8 +29,8 @@ const FAQSection: React.FC = () => {
       category: "general"
     },
     {
-      question: "Does RecruitOps integrate with my existing tools?",
-      answer: "Yes! RecruitOps integrates seamlessly with popular recruitment tools including LinkedIn Recruiter, Indeed, and major ATS systems. We also support CSV imports/exports and provide API access for custom integrations. Our team can help set up integrations during your trial period.",
+      question: "Does Jobwall integrate with my existing tools?",
+      answer: "Yes! Jobwall integrates seamlessly with popular recruitment tools including LinkedIn Recruiter, Indeed, and major ATS systems. We also support CSV imports/exports and provide API access for custom integrations. Our team can help set up integrations during your trial period.",
       category: "technical"
     },
     {
@@ -45,7 +45,7 @@ const FAQSection: React.FC = () => {
     },
     {
       question: "Can I track multiple recruitment verticals?",
-      answer: "Yes! RecruitOps supports unlimited job roles across any industry vertical. Whether you specialize in IT, finance, healthcare, or work across multiple sectors, our flexible pipeline management adapts to your specific recruitment process and terminology.",
+      answer: "Yes! Jobwall supports unlimited job roles across any industry vertical. Whether you specialize in IT, finance, healthcare, or work across multiple sectors, our flexible pipeline management adapts to your specific recruitment process and terminology.",
       category: "features"
     },
     {
@@ -88,7 +88,7 @@ const FAQSection: React.FC = () => {
             Frequently Asked Questions
           </h2>
           <p className="font-body text-base sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            Everything you need to know about RecruitOps. Can’t find what you’re looking for? Contact our support team.
+            Everything you need to know about Jobwall. Can’t find what you’re looking for? Contact our support team.
           </p>
         </div>
 

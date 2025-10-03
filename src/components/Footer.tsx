@@ -26,7 +26,7 @@ const Footer: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="mb-6">
               <h3 className="font-heading text-2xl font-bold text-white mb-2">
-                RecruitOps
+                Jobwall
               </h3>
               <p className="font-body text-cream-200 leading-relaxed">
                 Preventing lost placements through superior pipeline visibility.
@@ -248,7 +248,7 @@ const Footer: React.FC = () => {
               <a href="#" className="hover:text-white transition-colors">Accessibility</a>
             </div>
             <p className="font-body text-sm text-gray-400">
-              © {currentYear} RecruitOps Ltd. All rights reserved.
+              © {currentYear} Jobwall Ltd. All rights reserved.
             </p>
           </div>
         </div>
@@ -263,7 +263,7 @@ const Footer: React.FC = () => {
                 Ready to stop losing placements?
               </p>
               <p className="font-body text-blue-100 text-sm">
-                Join 2,500+ UK recruitment professionals using RecruitOps
+                Join 2,500+ UK recruitment professionals using Jobwall
               </p>
             </div>
             <a href="/onboarding" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-body font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap">

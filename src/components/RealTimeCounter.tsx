@@ -83,7 +83,7 @@ const RealTimeCounter: React.FC = () => {
               </div>
               <h3 className="font-body font-semibold text-lg mb-2">Solution</h3>
               <p className="font-body text-sm text-gray-300 leading-relaxed">
-                RecruitOps prevents losses with real-time pipeline visibility
+                Jobwall prevents losses with real-time pipeline visibility
               </p>
             </div>
           </div>

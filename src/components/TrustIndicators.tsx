@@ -35,7 +35,7 @@ const TrustIndicators: React.FC = () => {
             Trusted by UK recruitment professionals
           </p>
           <h3 className="font-body text-lg text-gray-700 max-w-2xl mx-auto">
-            Real consultants using RecruitOps to prevent lost placements
+            Real consultants using Jobwall to prevent lost placements
           </h3>
         </div>
 
@@ -128,7 +128,7 @@ const TrustIndicators: React.FC = () => {
         {/* Honest Growth Message */}
         <div className="text-center mt-8">
           <p className="font-body text-sm text-gray-500 max-w-2xl mx-auto">
-            We're a growing platform focused on solving real recruitment challenges.
+            We’re a growing platform focused on solving real recruitment challenges.
             Join our community of consultants who are already preventing lost placements.
           </p>
         </div>

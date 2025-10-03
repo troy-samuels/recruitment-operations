@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
               <Target className="absolute -top-1 -right-1 w-3 h-3 text-success-500 bg-white rounded-full p-0.5" />
             </div>
             <span className="font-heading text-xl font-bold text-primary-500 tracking-tight">
-              RecruitOps
+              Jobwall
             </span>
           </div>
 

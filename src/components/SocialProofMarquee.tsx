@@ -64,7 +64,7 @@ const SocialProofMarquee: React.FC = () => {
         {/* Trust statistics */}
         <div className="text-center mt-8">
           <p className="font-body text-sm text-gray-600">
-            <span className="font-semibold text-blue-600">2,500+</span> recruitment professionals trust RecruitOps
+            <span className="font-semibold text-blue-600">2,500+</span> recruitment professionals trust Jobwall
           </p>
         </div>
       </div>

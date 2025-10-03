@@ -13,7 +13,7 @@ const CaseStudySpotlight: React.FC = () => {
             Real Results from Real Consultants
           </h2>
           <p className="font-body text-xl text-gray-600 max-w-3xl mx-auto">
-            See how leading recruitment professionals transformed their pipeline performance with RecruitOps
+            See how leading recruitment professionals transformed their pipeline performance with Jobwall
           </p>
         </div>
 
@@ -50,7 +50,7 @@ const CaseStudySpotlight: React.FC = () => {
 
               {/* Quote */}
               <blockquote className="font-body text-lg text-gray-700 leading-relaxed mb-8">
-                "RecruitOps completely transformed our pipeline management. We went from losing multiple placements each month to having complete visibility over every candidate. The difference has been remarkable – both for our revenue and our team's confidence."
+                &quot;Jobwall completely transformed our pipeline management. We went from losing multiple placements each month to having complete visibility over every candidate. The difference has been remarkable – both for our revenue and our team’s confidence.&quot;
               </blockquote>
 
               {/* Key Quote */}
