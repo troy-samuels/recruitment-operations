@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
+import { Plus, HelpCircle } from 'lucide-react'
 
 interface FAQItem {
   question: string
@@ -77,7 +77,7 @@ const FAQSection: React.FC = () => {
   }
 
   return (
-    <section className="py-12 sm:py-24 bg-white">
+    <section className="py-14 sm:py-24 bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-10 sm:mb-16">
@@ -93,12 +93,12 @@ const FAQSection: React.FC = () => {
         </div>
 
         {/* FAQ Items - mobile-first clean list */}
-        <div className="rounded-xl ring-1 ring-gray-100 divide-y divide-gray-200 bg-white overflow-hidden">
+        <div className="rounded-2xl ring-1 ring-gray-100 divide-y divide-gray-200 bg-white overflow-hidden">
           {faqs.map((faq, index) => (
             <div key={index} className={`${openIndex===index ? 'bg-accent-50/40 border-l-2 border-accent-500' : ''}`}>
               <button
                 onClick={() => toggleItem(index)}
-                className="w-full min-h-[44px] py-3 sm:py-4 px-2 sm:px-4 text-left flex items-center justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="w-full min-h-[44px] py-4 sm:py-5 px-3 sm:px-5 text-left flex items-center justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 aria-expanded={openIndex===index}
                 aria-controls={`faq-panel-${index}`}
                 id={`faq-button-${index}`}
@@ -113,8 +113,8 @@ const FAQSection: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex-shrink-0 ml-3 transition-transform duration-200 ${openIndex===index ? 'rotate-180' : ''}">
-                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                <div className={`${openIndex===index ? 'rotate-45' : 'rotate-0'} flex-shrink-0 ml-3 transition-transform duration-200`}>
+                  <Plus className="w-5 h-5 text-primary-500" />
                 </div>
               </button>
 
@@ -123,7 +123,7 @@ const FAQSection: React.FC = () => {
                   id={`faq-panel-${index}`}
                   role="region"
                   aria-labelledby={`faq-button-${index}`}
-                  className="px-2 sm:px-4 pb-3 sm:pb-5"
+                  className="px-3 sm:px-5 pb-4 sm:pb-6"
                 >
                   <p className="font-body text-[14px] sm:text-base text-gray-700 leading-relaxed">
                     {faq.answer}
