@@ -16,6 +16,7 @@ import {
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear()
+  const [email, setEmail] = React.useState('')
 
   return (
     <footer className="bg-primary-500 text-white">
@@ -120,9 +121,19 @@ const Footer: React.FC = () => {
               <input
                 type="email"
                 placeholder="Enter your email"
+                value={email}
+                onChange={(e)=> setEmail(e.target.value)}
                 className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-body font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 justify-center">
+              <button
+                onClick={()=> {
+                  const addr = 'info@jobwall.co.uk'
+                  const subject = encodeURIComponent('Subscribe request')
+                  const body = encodeURIComponent(email ? `Please subscribe: ${email}` : 'Subscribe me to updates')
+                  window.location.href = `mailto:${addr}?subject=${subject}&body=${body}`
+                }}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-body font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 justify-center"
+              >
                 Subscribe
                 <ArrowRight className="w-4 h-4" />
               </button>

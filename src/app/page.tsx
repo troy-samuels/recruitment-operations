@@ -79,11 +79,11 @@ export default function Home() {
           </div>
 
           {/* CTA Below Preview */}
-          <div className="text-center mt-10 sm:mt-12">
-            <a href="/onboarding" className="font-body bg-accent-500 text-white px-10 py-4 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-lg font-semibold">
+          <div className="text-center mt-8 sm:mt-12 space-y-2">
+            <a href="/onboarding" className="inline-flex items-center justify-center font-body bg-accent-500 text-white px-8 py-3 sm:px-10 sm:py-4 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-base sm:text-lg font-semibold">
               Get Started
             </a>
-            <p className="font-body text-sm text-primary-400 mt-4">
+            <p className="font-body text-xs sm:text-sm text-primary-400">
               No credit card required • Full access • Cancel anytime
             </p>
           </div>
