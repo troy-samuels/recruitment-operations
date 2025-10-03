@@ -84,8 +84,8 @@ const PricingSection: React.FC = () => {
           </p>
 
           {/* Trust Badge */}
-          <div className={`inline-flex items-center gap-2 ${brandPreview ? 'bg-blue-50 text-blue-700' : 'bg-success-50 text-success-600'} px-4 py-2 rounded-full text-sm font-body`}>
-            <Shield className="w-4 h-4" />
+          <div className={`inline-flex items-center gap-2 bg-primary-50 text-primary-600 px-4 py-2 rounded-full text-sm font-body`}>
+            <Shield className="w-4 h-4 text-current" />
             Get 7 days free — cancel anytime
           </div>
         </div>

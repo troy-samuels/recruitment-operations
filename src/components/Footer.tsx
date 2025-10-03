@@ -76,114 +76,31 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Product Links */}
+          {/* Product Links (essential only) */}
           <div>
             <h4 className="font-body text-lg font-semibold text-white mb-4">Product</h4>
             <ul className="space-y-3">
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Features
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Pricing
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Pipeline Management
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Analytics & Reporting
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Integrations
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Mobile App
-                </a>
-              </li>
+              <li><a href="/" className="font-body text-gray-400 hover:text-white transition-colors">Home</a></li>
+              <li><a href="/pricing" className="font-body text-gray-400 hover:text-white transition-colors">Pricing</a></li>
+              <li><a href="mailto:info@jobwall.co.uk" className="font-body text-gray-400 hover:text-white transition-colors">Contact</a></li>
             </ul>
           </div>
 
-          {/* Resources Links */}
+          {/* Resources (temporarily trimmed) */}
           <div>
             <h4 className="font-body text-lg font-semibold text-white mb-4">Resources</h4>
             <ul className="space-y-3">
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Video Tutorials
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  API Documentation
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Case Studies
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Industry Reports
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Recruitment Blog
-                </a>
-              </li>
+              <li><a href="mailto:info@jobwall.co.uk" className="font-body text-gray-400 hover:text-white transition-colors">Email support</a></li>
             </ul>
           </div>
 
-          {/* Company Links */}
+          {/* Company (essential only) */}
           <div>
             <h4 className="font-body text-lg font-semibold text-white mb-4">Company</h4>
             <ul className="space-y-3">
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Careers
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Contact
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Press Kit
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Partners
-                </a>
-              </li>
-              <li>
-                <a href="#" className="font-body text-gray-400 hover:text-white transition-colors">
-                  Affiliate Program
-                </a>
-              </li>
+              <li><a href="mailto:info@jobwall.co.uk" className="font-body text-gray-400 hover:text-white transition-colors">Contact</a></li>
+              <li><a href="/privacy" className="font-body text-gray-400 hover:text-white transition-colors">Privacy</a></li>
+              <li><a href="/terms" className="font-body text-gray-400 hover:text-white transition-colors">Terms</a></li>
             </ul>
           </div>
         </div>
@@ -241,11 +158,9 @@ const Footer: React.FC = () => {
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap gap-6 text-sm text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Data Processing</a>
-              <a href="#" className="hover:text-white transition-colors">Accessibility</a>
+              <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
+              <a href="/terms" className="hover:text-white transition-colors">Terms</a>
+              <a href="mailto:info@jobwall.co.uk" className="hover:text-white transition-colors">Contact</a>
             </div>
             <p className="font-body text-sm text-gray-400">
               © {currentYear} Jobwall Ltd. All rights reserved.
