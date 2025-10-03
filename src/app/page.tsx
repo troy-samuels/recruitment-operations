@@ -52,9 +52,7 @@ export default function Home() {
                 Get Started
                 <ArrowRight className="w-5 h-5" />
               </a>
-              <a href="#how-it-works" className="font-body border-2 border-primary-500 text-primary-500 px-8 py-4 rounded-lg hover:border-primary-600 hover:bg-white transition-all duration-200 text-lg">
-                Watch 2‑min demo
-              </a>
+              {/* Demo link removed until dedicated page is ready */}
             </div>
 
           </div>
