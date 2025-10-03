@@ -10,7 +10,7 @@ interface FAQItem {
 }
 
 const FAQSection: React.FC = () => {
-  const [openItems, setOpenItems] = useState<Set<number>>(new Set([0])) // First item open by default
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   const faqs: FAQItem[] = [
     {
@@ -66,13 +66,7 @@ const FAQSection: React.FC = () => {
   ]
 
   const toggleItem = (index: number) => {
-    const newOpenItems = new Set(openItems)
-    if (newOpenItems.has(index)) {
-      newOpenItems.delete(index)
-    } else {
-      newOpenItems.add(index)
-    }
-    setOpenItems(newOpenItems)
+    setOpenIndex(prev => (prev === index ? null : index))
   }
 
   const categories = {
@@ -83,58 +77,57 @@ const FAQSection: React.FC = () => {
   }
 
   return (
-    <section className="py-24 bg-white">
+    <section className="py-12 sm:py-24 bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <HelpCircle className="w-8 h-8 text-blue-600" />
           </div>
-          <h2 className="font-heading text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="font-heading text-3xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
             Frequently Asked Questions
           </h2>
-          <p className="font-body text-xl text-gray-600 max-w-2xl mx-auto">
-            Everything you need to know about RecruitOps. Can't find what you're looking for? Contact our support team.
+          <p className="font-body text-base sm:text-xl text-gray-600 max-w-2xl mx-auto">
+            Everything you need to know about RecruitOps. Can’t find what you’re looking for? Contact our support team.
           </p>
         </div>
 
-        {/* FAQ Items */}
-        <div className="space-y-4">
+        {/* FAQ Items - mobile-first clean list */}
+        <div className="rounded-xl ring-1 ring-gray-100 divide-y divide-gray-200 bg-white overflow-hidden">
           {faqs.map((faq, index) => (
-            <div
-              key={index}
-              className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md"
-            >
+            <div key={index} className={`${openIndex===index ? 'bg-accent-50/40 border-l-2 border-accent-500' : ''}`}>
               <button
                 onClick={() => toggleItem(index)}
-                className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                className="w-full min-h-[44px] py-3 sm:py-4 px-2 sm:px-4 text-left flex items-center justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                aria-expanded={openIndex===index}
+                aria-controls={`faq-panel-${index}`}
+                id={`faq-button-${index}`}
               >
-                <div className="flex-1">
-                  <h3 className="font-body text-lg font-semibold text-gray-900 pr-4">
+                <div className="flex-1 pr-3">
+                  <h3 className="font-body text-[16px] sm:text-lg font-medium text-gray-900 leading-snug">
                     {faq.question}
                   </h3>
-                  <div className="mt-1">
-                    <span className="inline-block px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full">
+                  <div className="mt-1 hidden sm:block">
+                    <span className="inline-block px-2 py-0.5 text-xs font-medium text-blue-600 bg-blue-100 rounded-full">
                       {categories[faq.category]}
                     </span>
                   </div>
                 </div>
-                <div className="flex-shrink-0 ml-4">
-                  {openItems.has(index) ? (
-                    <ChevronUp className="w-5 h-5 text-gray-500" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-500" />
-                  )}
+                <div className="flex-shrink-0 ml-3 transition-transform duration-200 ${openIndex===index ? 'rotate-180' : ''}">
+                  <ChevronDown className="w-5 h-5 text-gray-500" />
                 </div>
               </button>
 
-              {openItems.has(index) && (
-                <div className="px-6 pb-5">
-                  <div className="border-t border-gray-200 pt-4">
-                    <p className="font-body text-gray-700 leading-relaxed">
-                      {faq.answer}
-                    </p>
-                  </div>
+              {openIndex===index && (
+                <div
+                  id={`faq-panel-${index}`}
+                  role="region"
+                  aria-labelledby={`faq-button-${index}`}
+                  className="px-2 sm:px-4 pb-3 sm:pb-5"
+                >
+                  <p className="font-body text-[14px] sm:text-base text-gray-700 leading-relaxed">
+                    {faq.answer}
+                  </p>
                 </div>
               )}
             </div>
@@ -142,14 +135,14 @@ const FAQSection: React.FC = () => {
         </div>
 
         {/* Contact Support CTA */}
-        <div className="text-center mt-12 p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+        <div className="text-center mt-10 sm:mt-12 p-6 sm:p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
           <h3 className="font-body text-xl font-bold text-gray-900 mb-4">
             Still have questions?
           </h3>
-          <p className="font-body text-gray-600 mb-6 max-w-md mx-auto">
+          <p className="font-body text-gray-600 mb-5 sm:mb-6 max-w-md mx-auto">
             Our support team is here to help. Get in touch and we'll respond within 24 hours.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-body font-semibold hover:bg-blue-700 transition-colors">
               Contact Support
             </button>
@@ -160,7 +153,7 @@ const FAQSection: React.FC = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid md:grid-cols-3 gap-8 mt-16 text-center">
+        <div className="grid md:grid-cols-3 gap-6 sm:gap-8 mt-12 sm:mt-16 text-center">
           <div>
             <div className="text-2xl font-bold text-blue-600 mb-2">&lt; 10 min</div>
             <p className="font-body text-sm text-gray-600">Average setup time</p>
