@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="bg-primary-500 text-white">
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="grid lg:grid-cols-4 gap-8 mb-12">
           {/* Company Info */}
           <div className="lg:col-span-1">

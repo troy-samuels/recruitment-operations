@@ -72,10 +72,10 @@ const PricingSection: React.FC = () => {
   }
 
   return (
-    <section id="pricing" className={`py-24 ${brandPreview ? 'bg-gradient-to-br from-[#F7FBFF] via-white to-[#F8FAFF]' : 'bg-gradient-to-br from-cream-100 to-white'}`}>
+    <section id="pricing" className={`py-16 sm:py-24 ${brandPreview ? 'bg-gradient-to-br from-[#F7FBFF] via-white to-[#F8FAFF]' : 'bg-gradient-to-br from-cream-100 to-white'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <h2 className="mb-6">
             Simple, Transparent Pricing
           </h2>
