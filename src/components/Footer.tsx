@@ -38,7 +38,7 @@ const Footer: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-accent-400 flex-shrink-0" />
-                <span className="font-body text-sm text-gray-300">hello@recruitops.co.uk</span>
+                <a href="mailto:info@jobwall.co.uk" className="font-body text-sm text-gray-300 hover:text-white">info@jobwall.co.uk</a>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-blue-400 flex-shrink-0" />
@@ -190,7 +190,7 @@ const Footer: React.FC = () => {
 
         {/* Newsletter Signup */}
         <div className="border-t border-gray-800 pt-8 mb-8">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 items-center">
             <div>
               <h4 className="font-body text-xl font-semibold text-white mb-2">
                 Stay Updated
@@ -199,13 +199,13 @@ const Footer: React.FC = () => {
                 Get weekly insights on UK recruitment trends and pipeline optimization tips.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="email"
                 placeholder="Enter your email"
                 className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-body font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2">
+              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-body font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 justify-center">
                 Subscribe
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -266,7 +266,7 @@ const Footer: React.FC = () => {
                 Join 2,500+ UK recruitment professionals using Jobwall
               </p>
             </div>
-            <a href="/onboarding" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-body font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap">
+            <a href="/onboarding" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-body font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap text-center">
               Start Free Trial
             </a>
           </div>

@@ -116,15 +116,15 @@ const PricingSection: React.FC = () => {
               <h3 className="font-body text-2xl font-bold text-primary-500 mb-2">Professional</h3>
               <p className="font-body text-primary-400 mb-6">Perfect for individual recruiters</p>
 
-              <div className="mb-3">
-                <span className="font-body text-5xl font-bold text-primary-500">{perSeat ? formatGBP(perSeat) : '—'}</span>
-                <span className="font-body text-lg text-primary-400">/seat/month</span>
+              <div className="mb-3 leading-tight">
+                <div>
+                  <span className="font-body text-5xl font-bold text-primary-500">{perSeat ? formatGBP(perSeat) : '—'}</span>
+                </div>
+                <div className="font-body text-sm sm:text-lg text-primary-400">/seat/month</div>
               </div>
               <div className="text-sm text-primary-400">
                 {price?.tiers_mode === 'volume' && price?.billing_scheme === 'tiered' ? (
-                  <>
-                    <span>Tiered pricing: price reduces as you add seats.</span>
-                  </>
+                  <span>Tiered: per-seat price drops at higher seat counts.</span>
                 ) : (
                   <span>Flat pricing per seat.</span>
                 )}
