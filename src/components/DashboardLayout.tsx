@@ -11,13 +11,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 	React.useEffect(() => {
 		const expandOnInvite = () => setLeftCollapsed(false)
 		const expandOnAddRole = () => {
-			const wasCollapsed = leftCollapsed
 			if (leftCollapsed) setLeftCollapsed(false)
-			// After expansion transition, open the panel
-			const delay = wasCollapsed ? 250 : 0
-			setTimeout(() => {
-				try { window.dispatchEvent(new Event('open-add-role-now')) } catch {}
-			}, delay)
 		}
 		window.addEventListener('expand-sidebar', expandOnInvite)
 		window.addEventListener('open-add-role', expandOnAddRole as EventListener)

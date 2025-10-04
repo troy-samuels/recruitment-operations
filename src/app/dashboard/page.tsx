@@ -64,12 +64,7 @@ export default function DashboardPage() {
     }
   }, [])
 
-  // Wire opening Add Role from sidebar event
-  React.useEffect(() => {
-    const openAddRoleImmediate = () => setAddRoleOpen(true)
-    window.addEventListener('open-add-role-now', openAddRoleImmediate as EventListener)
-    return () => window.removeEventListener('open-add-role-now', openAddRoleImmediate as EventListener)
-  }, [])
+  // Remove any auto-open behavior; Add Role opens only when user triggers it.
 
   // Urgent Actions modal
   React.useEffect(() => {

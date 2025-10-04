@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // - ro_session=1 when a Supabase session is present
 // - ro_guest=1 when onboarding guest flow is completed
 
-const PROTECTED_PREFIXES = ['/dashboard', '/analytics', '/team']
+const PROTECTED_PREFIXES = ['/dashboard', '/analytics', '/team', '/messages']
 
 export function middleware(req: NextRequest) {
 	const { pathname } = req.nextUrl
@@ -31,5 +31,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-	matcher: ['/dashboard/:path*', '/analytics/:path*', '/team/:path*'],
+    matcher: ['/dashboard/:path*', '/analytics/:path*', '/team/:path*', '/messages/:path*'],
 }
