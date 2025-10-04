@@ -255,6 +255,14 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
             <BarChart3 className="w-4 h-4 flex-shrink-0" />
             {!collapsed && <span>Analytics</span>}
           </a>
+          <a
+            href="/messages"
+            className={`flex items-center ${collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2'} text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors`}
+            title={collapsed ? "Messages" : ""}
+          >
+            <Zap className="w-4 h-4 flex-shrink-0" />
+            {!collapsed && <span>Messages</span>}
+          </a>
         </nav>
       </div>
 
