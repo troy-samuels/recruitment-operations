@@ -2,41 +2,35 @@
 import React from 'react'
 import { trackEvent } from '@/lib/metrics'
 import { useWorkspace } from '@/components/WorkspaceProvider'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ChevronDown } from 'lucide-react'
 import useSWR from 'swr'
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  Tooltip as RTooltip,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from 'recharts'
 
 const AnalyticsInner: React.FC = () => {
   const { view, setView, workspaceTier } = useWorkspace()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [range, setRange] = React.useState<'7d'|'30d'|'90d'>('30d')
-  const [events, setEvents] = React.useState<Array<{ name: string; ts: number; props?: any }>>([])
-  const [filterDay, setFilterDay] = React.useState<string | null>(null)
+  // simplified analytics: focused tiles
   const [summary, setSummary] = React.useState<any>(null)
-  const [series, setSeries] = React.useState<Array<{ t: string; v: number }>>([])
-  const [seriesPrev, setSeriesPrev] = React.useState<Array<{ t: string; v: number }>>([])
   const [heat, setHeat] = React.useState<Array<{ d: string; v: number }>>([])
   const [leadersTeam, setLeadersTeam] = React.useState<Array<{ userId: string; placements: number }>>([])
-  const [leadersCompany, setLeadersCompany] = React.useState<Array<{ company: string; conversionPct: number; placements: number }>>([])
-  const [lbTeamTotal, setLbTeamTotal] = React.useState(0)
-  const [lbCompanyTotal, setLbCompanyTotal] = React.useState(0)
-  const [lbTeamOffset, setLbTeamOffset] = React.useState(0)
-  const [lbCompanyOffset, setLbCompanyOffset] = React.useState(0)
-  const [loading, setLoading] = React.useState(false)
-  const [metric, setMetric] = React.useState<'placements'|'interviews'|'cv_sent'|'tasks_completed'>('placements')
-  const [isExportMenuOpen, setIsExportMenuOpen] = React.useState(false)
-  const [isManageMenuOpen, setIsManageMenuOpen] = React.useState(false)
+  const [lbTeamOffset] = React.useState(0)
 
-  // Close dropdowns on outside click
-  React.useEffect(() => {
-    const onDocClick = () => { setIsExportMenuOpen(false); setIsManageMenuOpen(false) }
-    window.addEventListener('click', onDocClick)
-    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setIsExportMenuOpen(false); setIsManageMenuOpen(false) } }
-    window.addEventListener('keydown', onEsc)
-    return () => window.removeEventListener('click', onDocClick)
-  }, [])
+  // no dropdowns in simplified view
 
   React.useEffect(() => {
     fetch('/api/metrics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ events: [] }) })
@@ -51,10 +45,8 @@ const AnalyticsInner: React.FC = () => {
   // Initialize from URL
   React.useEffect(() => {
     const r = searchParams.get('range') as any
-    const m = searchParams.get('metric') as any
     const v = searchParams.get('view') as any
     if (r && ['7d','30d','90d'].includes(r)) setRange(r)
-    if (m && ['placements','interviews','cv_sent','tasks_completed'].includes(m)) setMetric(m)
     if (v && ['individual','team'].includes(v)) {
       if (v === 'team' && workspaceTier !== 'team') {
         // ignore if not allowed
@@ -69,57 +61,99 @@ const AnalyticsInner: React.FC = () => {
   React.useEffect(() => {
     const qs = new URLSearchParams()
     qs.set('range', range)
-    qs.set('metric', metric)
     qs.set('view', view)
     router.replace(`/analytics?${qs.toString()}`)
-  }, [range, metric, view, router])
+  }, [range, view, router])
 
   // SWR-based caching for analytics data
   const workspaceId = (typeof window !== 'undefined' && localStorage.getItem('workspace_id')) || ''
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const qsBase = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}&range=${range}` : null
   const { data: swrSummary } = useSWR(qsBase ? `/api/analytics/summary${qsBase}` : null, fetcher)
-  const { data: swrTs } = useSWR(qsBase ? `/api/analytics/timeseries${qsBase}&metric=${metric}` : null, fetcher)
-  const { data: swrTsPrev } = useSWR(qsBase ? `/api/analytics/timeseries${qsBase}&metric=${metric}&prev=1` : null, fetcher)
   const { data: swrHeat } = useSWR(qsBase ? `/api/analytics/heatmap${qsBase}&metric=stage_moves` : null, fetcher)
   const { data: swrLbT } = useSWR(qsBase ? `/api/analytics/leaderboard${qsBase}&type=teammates&limit=8&offset=${lbTeamOffset}` : null, fetcher)
-  const { data: swrLbC } = useSWR(qsBase ? `/api/analytics/leaderboard${qsBase}&type=companies&limit=10&offset=${lbCompanyOffset}` : null, fetcher)
 
   React.useEffect(() => { setSummary(swrSummary || null) }, [swrSummary])
-  React.useEffect(() => { setSeries(swrTs?.points || []); setSeriesPrev(swrTsPrev?.points || []) }, [swrTs, swrTsPrev])
   React.useEffect(() => { setHeat(swrHeat?.cells || []) }, [swrHeat])
-  React.useEffect(() => { setLeadersTeam(swrLbT?.rows || []); setLbTeamTotal(swrLbT?.total || 0) }, [swrLbT])
-  React.useEffect(() => { setLeadersCompany(swrLbC?.rows || []); setLbCompanyTotal(swrLbC?.total || 0) }, [swrLbC])
+  React.useEffect(() => { setLeadersTeam(swrLbT?.rows || []) }, [swrLbT])
 
-  const exportCsv = () => {
-    const header = 'name,ts\n'
-    const rows = events.map(e => `${e.name},${new Date(e.ts).toISOString()}`).join('\n')
-    const blob = new Blob([header + rows], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `analytics_${view}_${range}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+  // exports trimmed in v1; can add later per-table
+
+  // timeseries removed in simplified v1
+
+  // Visual helpers
+  const brandColors = {
+    primary: '#152B3C',
+    accent: '#D46240',
+    success: '#2F906A',
+    blue100: '#dbeafe',
+    blue500: '#3b82f6',
+    gray200: '#e5e7eb',
+    gray400: '#9ca3af',
   }
 
-  const TimeseriesChart: React.FC<{ data: Array<{ t: string; v: number }>, compare?: Array<{ t: string; v: number }> }> = ({ data, compare }) => {
-    if (!data || data.length === 0) return <div className="text-xs text-gray-500">No data</div>
-    const rows = data.map(d => ({ t: d.t.slice(5), v: d.v, v2: 0 }))
-    if (compare && compare.length === rows.length) {
-      for (let i=0;i<rows.length;i++) rows[i].v2 = compare[i].v
-    }
+  const Sparkline: React.FC<{ data?: Array<{ t: string; v: number }> }> = ({ data }) => {
+    const rows = (data && data.length>0 ? data : Array.from({length:12}).map((_,i)=>({ t: String(i), v: Math.max(0, Math.round(10+5*Math.sin(i))) })) )
     return (
-      <div className="h-56">
+      <div className="h-10">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={rows} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+          <AreaChart data={rows} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+            <Area type="monotone" dataKey="v" stroke={brandColors.accent} fill={brandColors.accent} fillOpacity={0.15} strokeWidth={2} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
+  const Donut: React.FC<{ parts: Array<{ name: string; value: number }> }> = ({ parts }) => {
+    const data = parts && parts.length>0 ? parts : [
+      { name: 'New', value: 4 },
+      { name: 'Contacted', value: 6 },
+      { name: 'Interview', value: 3 },
+      { name: 'Placed', value: 2 },
+    ]
+    const colors = [brandColors.blue100, '#c7d2fe', '#fde68a', '#bbf7d0']
+    return (
+      <div className="h-52">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={data} dataKey="value" nameKey="name" innerRadius={48} outerRadius={70} stroke="#fff" strokeWidth={1}>
+              {data.map((_,i)=> <Cell key={i} fill={colors[i % colors.length]} />)}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
+  const Gauge: React.FC<{ pct: number }> = ({ pct }) => {
+    const value = Math.max(0, Math.min(100, pct||0))
+    const data = [{ value }, { value: 100 - value }]
+    const colors = [brandColors.success, brandColors.gray200]
+    return (
+      <div className="h-40">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={data} startAngle={180} endAngle={0} innerRadius={55} outerRadius={70} dataKey="value" stroke="none">
+              {data.map((_,i)=> <Cell key={i} fill={colors[i]} />)}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  }
+
+  const BarLeaders: React.FC<{ rows: Array<{ userId: string; placements: number }> }> = ({ rows }) => {
+    const data = (rows || []).slice(0,8).map(r=> ({ name: r.userId?.slice(0,6) || '—', v: r.placements || 0 }))
+    return (
+      <div className="h-52">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 16 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="t" tick={{ fontSize: 12 }} />
-            <YAxis allowDecimals={false} width={28} tick={{ fontSize: 12 }} />
-            <Tooltip formatter={(val, name)=>[val as any, name==='v'?'Current':'Previous']} labelFormatter={(l)=>`Date: ${l}`} />
-            <Line type="monotone" dataKey="v" stroke="#3b82f6" strokeWidth={2} dot={false} />
-            {compare && compare.length>0 && <Line type="monotone" dataKey="v2" stroke="#94a3b8" strokeDasharray="4 3" dot={false} />}
-          </LineChart>
+            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+            <YAxis allowDecimals={false} width={24} tick={{ fontSize: 12 }} />
+            <Bar dataKey="v" fill={brandColors.accent} radius={[4,4,0,0]} />
+          </BarChart>
         </ResponsiveContainer>
       </div>
     )
@@ -215,15 +249,6 @@ const AnalyticsInner: React.FC = () => {
               {workspaceTier==='team' && (
                 <button onClick={()=>{ try { localStorage.setItem('dashboard_view','team') } catch {}; window.location.href='/dashboard' }} className="text-sm px-2.5 py-1 rounded-md border border-gray-200 hover:bg-gray-50">Team Dashboard</button>
               )}
-              <div className="relative" onClick={(e)=> e.stopPropagation()}>
-                <button onClick={(e)=>{ e.stopPropagation(); setIsManageMenuOpen(v=>!v); setIsExportMenuOpen(false) }} className="text-sm px-2.5 py-1 rounded-md border border-gray-200 hover:bg-gray-50 flex items-center gap-1">Manage <ChevronDown className="w-3.5 h-3.5 text-gray-600" /></button>
-                {isManageMenuOpen && (
-                  <div className="absolute z-50 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-md py-1">
-                    <button className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50" onClick={()=>{ window.location.href='/settings'; setIsManageMenuOpen(false) }}>Settings</button>
-                    <button className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50" onClick={()=>{ window.location.href='/billing'; setIsManageMenuOpen(false) }}>Billing</button>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -236,186 +261,62 @@ const AnalyticsInner: React.FC = () => {
               <option value="30d">Last 30 days</option>
               <option value="90d">Last 90 days</option>
             </select>
-            <select value={metric} onChange={(e)=> setMetric(e.target.value as any)} className="border border-gray-300 rounded-md px-2 py-1 text-sm">
-              <option value="placements">Placements</option>
-              <option value="interviews">Interviews</option>
-              <option value="cv_sent">CVs Sent</option>
-              <option value="tasks_completed">Tasks Completed</option>
-            </select>
-            <div className="relative" onClick={(e)=> e.stopPropagation()}>
-              <button onClick={(e)=>{ e.stopPropagation(); setIsExportMenuOpen(v=>!v); setIsManageMenuOpen(false) }} className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 flex items-center gap-1">Export <ChevronDown className="w-3.5 h-3.5 text-gray-600" /></button>
-              {isExportMenuOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-md py-1">
-                  <button className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50" onClick={()=>{ exportCsv(); setIsExportMenuOpen(false) }}>Export CSV</button>
-                  <button className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50" onClick={()=>{ window.print(); setIsExportMenuOpen(false) }}>Print report</button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
-        <div className="grid md:grid-cols-3 gap-4">
+        {/* KPI strip with sparklines */}
+        <div className="grid md:grid-cols-5 gap-4">
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-xs text-gray-500">Placements (QTD)</div>
-            <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.placementsQTD ?? 0}</div>
-            {!summary && <div className="text-xs text-gray-400 mt-1">No data</div>}
+            <div className="text-xs text-gray-500">Placements</div>
+            <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.placementsQTD ?? summary?.kpis?.placementsRange ?? 0}</div>
+            <Sparkline data={summary?.sparks?.placements} />
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-xs text-gray-500">Roles in progress</div>
-            <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.rolesInProgress ?? 0}</div>
-            {!summary && <div className="text-xs text-gray-400 mt-1">No data</div>}
+            <div className="text-xs text-gray-500">Weighted pipeline</div>
+            <div className="text-xl font-semibold text-gray-900">{typeof summary?.kpis?.weightedPipelineGBP==='number' ? new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(summary.kpis.weightedPipelineGBP/100) : '—'}</div>
+            <Sparkline data={summary?.sparks?.pipeline} />
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-xs text-gray-500">Urgent actions</div>
-            <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.urgentCount ?? 0}</div>
-            {!summary && <div className="text-xs text-gray-400 mt-1">No data</div>}
+            <div className="text-xs text-gray-500">Cycle time P50/P90</div>
+            <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.cycleTimeP50Days ?? '—'}<span className="text-gray-400 text-base">d</span> / {summary?.kpis?.cycleTimeP90Days ?? '—'}<span className="text-gray-400 text-base">d</span></div>
+            <Sparkline data={summary?.sparks?.cycle} />
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="text-xs text-gray-500">SLA adherence</div>
+            <div className="text-2xl font-semibold text-gray-900">{typeof summary?.kpis?.slaPct==='number' ? `${summary.kpis.slaPct}%` : '—'}</div>
+            <Sparkline data={summary?.sparks?.sla} />
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="text-xs text-gray-500">On‑time follow‑ups</div>
+            <div className="text-2xl font-semibold text-gray-900">{typeof summary?.kpis?.followupOnTimePct==='number' ? `${summary.kpis.followupOnTimePct}%` : '—'}</div>
+            <Sparkline data={summary?.sparks?.followups} />
           </div>
         </div>
 
-        <div className="mt-4 grid md:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs text-gray-500">Placements (range)</div>
-                <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.placementsRange ?? 0}</div>
-              </div>
-              {typeof summary?.deltas?.placementsRangePct === 'number' && (
-                <span className={`text-xs px-2 py-1 rounded-full ${summary.deltas.placementsRangePct>=0?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}`}>
-                  {summary.deltas.placementsRangePct>=0?'+':''}{summary.deltas.placementsRangePct}%
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs text-gray-500">Interviews (range)</div>
-                <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.interviewsRange ?? 0}</div>
-              </div>
-              {typeof summary?.deltas?.interviewsRangePct === 'number' && (
-                <span className={`text-xs px-2 py-1 rounded-full ${summary.deltas.interviewsRangePct>=0?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}`}>
-                  {summary.deltas.interviewsRangePct>=0?'+':''}{summary.deltas.interviewsRangePct}%
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs text-gray-500">CVs Sent (range)</div>
-                <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.cvSentRange ?? 0}</div>
-              </div>
-              {typeof summary?.deltas?.cvSentRangePct === 'number' && (
-                <span className={`text-xs px-2 py-1 rounded-full ${summary.deltas.cvSentRangePct>=0?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}`}>
-                  {summary.deltas.cvSentRangePct>=0?'+':''}{summary.deltas.cvSentRangePct}%
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* Optional secondary KPIs could go here (kept minimal for v1) */}
 
+        {/* Funnel + Stage distribution + SLA gauge */}
         <div className="mt-6 grid lg:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 lg:col-span-2">
-            <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-medium text-gray-800 capitalize">{metric.replace('_',' ')} over time</div>
-            </div>
-            <TimeseriesChart data={series} compare={seriesPrev} />
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="text-sm font-medium text-gray-800 mb-2">Stage distribution</div>
+            <Donut parts={summary?.stageDistribution || []} />
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-medium text-gray-800 mb-2">Quarter progress</div>
-            <div className="text-sm text-gray-600">Days left in Q: <span className="font-semibold">{summary?.kpis?.daysLeftInQuarter ?? '-'}</span></div>
-            <div className="mt-3 h-2 w-full bg-gray-100 rounded">
-              <div className="h-2 bg-blue-500 rounded" style={{ width: `${summary?.kpis?.quarterProgressPct || 0}%` }} />
-            </div>
+            <div className="text-sm font-medium text-gray-800 mb-2">SLA adherence</div>
+            <Gauge pct={summary?.kpis?.slaPct ?? 0} />
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="text-sm font-medium text-gray-800 mb-2">Consultants (placements)</div>
+            <BarLeaders rows={leadersTeam || []} />
           </div>
         </div>
 
-        <div className="mt-6 grid lg:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 lg:col-span-2">
-            <div className="text-sm font-medium text-gray-800 mb-2">Activity heatmap</div>
-            <Heatmap cells={heat} />
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-medium text-gray-800 mb-2">Teammates (placements)</div>
-            <div className="space-y-2 text-sm">
-              {leadersTeam.length === 0 && <div className="text-gray-500">No data</div>}
-              {[...leadersTeam].sort((a,b)=> b.placements - a.placements).slice(0,8).map((r, i) => (
-                <div key={r.userId || i} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 rounded-md px-2 py-1"
-                     onClick={async ()=>{
-                       try {
-                         const workspaceId = (typeof window !== 'undefined' && localStorage.getItem('workspace_id')) || ''
-                         if (!workspaceId) return
-                         const q = new URLSearchParams({ workspaceId, range, metric, userId: r.userId || '' })
-                         const res = await fetch(`/api/analytics/events?${q.toString()}`)
-                         const j = await res.json()
-                         if (res.ok && Array.isArray(j?.events)) {
-                           setFilterDay(null)
-                           setEvents(j.events.map((e: any) => ({ name: e.name, ts: new Date(e.ts).getTime(), props: { company: e.company, stage: e.stage } })))
-                         }
-                       } catch {}
-                     }}
-                >
-                  <span className="text-gray-700">{r.userId?.slice(0,8) || 'unknown'}</span>
-                  <span className="font-medium text-gray-900">{r.placements}</span>
-                </div>
-              ))}
-              <div className="pt-2 flex items-center gap-2">
-                <button className="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={lbTeamOffset<=0} onClick={()=> setLbTeamOffset(Math.max(0, lbTeamOffset - 8))}>Prev</button>
-                <button className="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={!(lbTeamTotal > lbTeamOffset + leadersTeam.length)} onClick={()=> setLbTeamOffset(lbTeamOffset + 8)}>Next</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 grid lg:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-medium text-gray-800 mb-2">Companies (conversion)</div>
-            <div className="space-y-2 text-sm">
-              {leadersCompany.length === 0 && <div className="text-gray-500">No data</div>}
-              {[...leadersCompany].sort((a,b)=> b.conversionPct - a.conversionPct).slice(0,10).map((r, i) => (
-                <div key={r.company || i} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 rounded-md px-2 py-1"
-                     onClick={async ()=>{
-                       try {
-                         const workspaceId = (typeof window !== 'undefined' && localStorage.getItem('workspace_id')) || ''
-                         if (!workspaceId) return
-                         const q = new URLSearchParams({ workspaceId, range, metric, company: r.company })
-                         const res = await fetch(`/api/analytics/events?${q.toString()}`)
-                         const j = await res.json()
-                         if (res.ok && Array.isArray(j?.events)) {
-                           setFilterDay(null)
-                           setEvents(j.events.map((e: any) => ({ name: e.name, ts: new Date(e.ts).getTime(), props: { company: e.company, stage: e.stage } })))
-                         }
-                       } catch {}
-                     }}
-                >
-                  <span className="text-gray-700">{r.company}</span>
-                  <span className="font-medium text-gray-900">{r.conversionPct}%</span>
-                </div>
-              ))}
-              <div className="pt-2 flex items-center gap-2">
-                <button className="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={lbCompanyOffset<=0} onClick={()=> setLbCompanyOffset(Math.max(0, lbCompanyOffset - 10))}>Prev</button>
-                <button className="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-50" disabled={!(lbCompanyTotal > lbCompanyOffset + leadersCompany.length)} onClick={()=> setLbCompanyOffset(lbCompanyOffset + 10)}>Next</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        {/* Stage aging heatmap */}
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-medium text-gray-800">{filterDay ? `Activity on ${filterDay}` : 'Recent activity'}</div>
-            {filterDay && <button className="text-xs text-blue-600 hover:text-blue-700" onClick={()=>{ setFilterDay(null); setEvents([]) }}>Clear</button>}
-          </div>
-          <div className="space-y-2 max-h-[40vh] overflow-auto">
-            {events.length === 0 && (
-              <div className="text-sm text-gray-500">No activity yet.</div>
-            )}
-            {events.map((e, idx) => (
-              <div key={idx} className="flex items-center justify-between text-sm">
-                <div className="text-gray-800">{e.name}{e?.props?.company ? ` • ${e.props.company}` : ''}{e?.props?.stage ? ` • ${e.props.stage}` : ''}</div>
-                <div className="text-gray-500">{new Date(e.ts).toLocaleString()}</div>
-              </div>
-            ))}
-          </div>
+          <div className="text-sm font-medium text-gray-800 mb-2">Activity heatmap</div>
+          <Heatmap cells={heat} />
         </div>
+
+        {/* Companies leaderboard and activity feed removed in v1 */}
       </div>
     </div>
   )

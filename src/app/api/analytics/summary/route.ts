@@ -99,6 +99,37 @@ export async function GET(req: NextRequest) {
     const quarterProgressPct = Math.min(100, Math.max(0, Math.round(((now.getTime() - quarterStart.getTime()) / (quarterEnd.getTime() - quarterStart.getTime())) * 100)))
     const daysLeftInQuarter = Math.max(0, Math.ceil((quarterEnd.getTime() - now.getTime()) / (24 * 3600 * 1000)))
 
+    // Placeholder calculations for additional KPIs (replace with SQL/materialized views as needed)
+    const weightedPipelineGBP = 0 // TODO: sum of role values * stage probability
+    const cycleTimeP50Days = undefined as any // TODO: median from stage_transitions
+    const cycleTimeP90Days = undefined as any
+    const slaPct = undefined as any // TODO: % roles within stage time limits
+    const followupOnTimePct = undefined as any // TODO: % tasks completed on/before due
+
+    // Sparklines: small arrays; for now, derive trivial series from placement counts when absent
+    const sparkFromCounts = (rows?: Array<{ ct: number; day: string }>) => {
+      const src = rows || []
+      const mapped = src.slice(-12).map(r => ({ t: r.day, v: (r as any).ct }))
+      return mapped.length ? mapped : Array.from({ length: 12 }).map((_, i) => ({ t: String(i), v: 0 }))
+    }
+
+    // Fetch recent placement day counts for a basic sparkline
+    const { data: sparkRows } = await admin
+      .from('events_daily_counts')
+      .select('ct, day')
+      .eq('workspace_id', workspaceId)
+      .eq('event_name', 'placement_created')
+      .gte('day', prevStart.toISOString())
+      .lte('day', now.toISOString())
+
+    // Stage distribution placeholder (replace with live view)
+    const stageDistribution = [
+      { name: 'New', value: 0 },
+      { name: 'Contacted', value: 0 },
+      { name: 'Interview', value: 0 },
+      { name: 'Placed', value: placementsRange },
+    ]
+
     return NextResponse.json({
       kpis: {
         placementsQTD: placementsQTD ?? 0,
@@ -109,6 +140,11 @@ export async function GET(req: NextRequest) {
         cvSentRange: cvs.curTotal,
         quarterProgressPct,
         daysLeftInQuarter,
+        weightedPipelineGBP,
+        cycleTimeP50Days,
+        cycleTimeP90Days,
+        slaPct,
+        followupOnTimePct,
       },
       deltas: {
         placementsRangeDelta,
@@ -117,7 +153,15 @@ export async function GET(req: NextRequest) {
         interviewsRangePct: intv.pct,
         cvSentRangeDelta: cvs.delta,
         cvSentRangePct: cvs.pct,
-      }
+      },
+      sparks: {
+        placements: sparkFromCounts(sparkRows as any),
+        pipeline: [],
+        cycle: [],
+        sla: [],
+        followups: [],
+      },
+      stageDistribution,
     })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Server error' }, { status: 500 })
