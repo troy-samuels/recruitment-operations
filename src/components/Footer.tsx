@@ -192,7 +192,7 @@ const Footer: React.FC = () => {
                 Join 2,500+ UK recruitment professionals using Jobwall
               </p>
             </div>
-            <a href="/onboarding" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-body font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap text-center">
+            <a href="/start/account" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-body font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap text-center">
               Start Free Trial
             </a>
           </div>

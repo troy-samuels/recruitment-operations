@@ -48,7 +48,7 @@ export default function Home() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10 sm:mb-16">
-              <a href="/onboarding" className="font-body bg-accent-500 text-white px-8 py-4 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2 text-lg">
+              <a href="/start/account" className="font-body bg-accent-500 text-white px-8 py-4 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2 text-lg">
                 Get Started
                 <ArrowRight className="w-5 h-5" />
               </a>
@@ -80,7 +80,7 @@ export default function Home() {
 
           {/* CTA Below Preview */}
           <div className="text-center mt-8 sm:mt-12 space-y-2">
-            <a href="/onboarding" className="inline-flex items-center justify-center font-body bg-accent-500 text-white px-8 py-3 sm:px-10 sm:py-4 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-base sm:text-lg font-semibold">
+            <a href="/start/account" className="inline-flex items-center justify-center font-body bg-accent-500 text-white px-8 py-3 sm:px-10 sm:py-4 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-base sm:text-lg font-semibold">
               Get Started
             </a>
             <p className="font-body text-xs sm:text-sm text-primary-400">

@@ -139,7 +139,11 @@ const PricingSection: React.FC = () => {
               </div>
             </div>
 
-            <button onClick={startCheckout} disabled={loading} className={`mt-auto w-full ${brandPreview ? 'bg-blue-600 hover:bg-blue-700' : 'bg-accent-500 hover:bg-accent-600'} text-white px-6 py-4 rounded-lg font-body font-semibold transition-all duration-200 hover:translate-y-[-1px] flex items-center justify-center gap-2 group disabled:opacity-60`} aria-label="Start free trial and checkout">
+            <button onClick={()=> {
+              if (typeof window !== 'undefined') {
+                window.location.href = '/start/account'
+              }
+            }} disabled={loading} className={`mt-auto w-full ${brandPreview ? 'bg-blue-600 hover:bg-blue-700' : 'bg-accent-500 hover:bg-accent-600'} text-white px-6 py-4 rounded-lg font-body font-semibold transition-all duration-200 hover:translate-y-[-1px] flex items-center justify-center gap-2 group disabled:opacity-60`} aria-label="Start free trial">
               {loading ? 'Starting…' : 'Get 7 Days Free'}
               <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
