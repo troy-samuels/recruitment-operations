@@ -14,7 +14,10 @@ export default function StartAccountPage() {
 
   React.useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace('/start/seats')
+      if (data.session) {
+        const q = typeof window !== 'undefined' ? window.location.search : ''
+        router.replace(`/start/seats${q || ''}`)
+      }
     })
   }, [router, supabase])
 
@@ -39,7 +42,8 @@ export default function StartAccountPage() {
           })
         } catch {}
       }
-      router.replace('/start/seats')
+      const q = typeof window !== 'undefined' ? window.location.search : ''
+      router.replace(`/start/seats${q || ''}`)
     } catch (e: any) {
       alert(e?.message || 'Failed to create account')
     } finally {

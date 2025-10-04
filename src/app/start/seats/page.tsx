@@ -7,14 +7,19 @@ const ADDL_SEAT_PENCE = 2900
 const formatGBP = (p:number) => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(p/100)
 
 export default function StartSeatsPage() {
-  const [seats, setSeats] = React.useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const q = new URLSearchParams(window.location.search)
-      const s = Number(q.get('seats') || '1')
-      return Math.max(1, s)
+  const [seats, setSeats] = React.useState<number>(1)
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return
+    const q = new URLSearchParams(window.location.search)
+    const fromQuery = Number(q.get('seats') || '0')
+    if (fromQuery > 0) {
+      setSeats(Math.max(1, fromQuery))
+      try { localStorage.setItem('seats_purchased', String(Math.max(1, fromQuery))) } catch {}
+      return
     }
-    return 1
-  })
+    const stored = Number(localStorage.getItem('seats_purchased') || '0')
+    setSeats(Math.max(1, stored || 1))
+  }, [])
   const total = seats===1 ? FIRST_SEAT_PENCE : FIRST_SEAT_PENCE + (seats-1)*ADDL_SEAT_PENCE
   const startCheckout = async () => {
     const workspaceId = (typeof window !== 'undefined' && localStorage.getItem('workspace_id')) || ''
