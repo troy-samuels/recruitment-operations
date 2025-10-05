@@ -24,11 +24,8 @@ export default function DashboardPage() {
 		if (localStorage.getItem('just_onboarded') === '1') {
 			setShowCoachmark(true)
 			localStorage.removeItem('just_onboarded')
-			// auto open and then hide coachmark so it does not obstruct the form
-			setTimeout(() => {
-				setShowCoachmark(false)
-				window.dispatchEvent(new CustomEvent('open-add-role', { detail: { expandSidebar: true, anchorY: 120 } }))
-			}, 800)
+			// Show a quick coachmark to point to Add Role, but do not auto-open or expand sidebar
+			setTimeout(() => { setShowCoachmark(false) }, 1800)
 		}
 		return () => window.removeEventListener('open-add-role', hideCoachmark as EventListener)
 	}, [])
@@ -228,10 +225,10 @@ export default function DashboardPage() {
 					<div className="absolute left-16 top-80">
 						<div className="relative bg-white border border-cream-200 shadow-xl rounded-xl p-4 w-72 animate-[slideIn_300ms_ease-out]">
 							<div className="text-sm font-medium text-primary-500 mb-1">Great — setup complete</div>
-							<div className="text-sm text-primary-400 mb-3">Add your first role to get your pipeline moving.</div>
+							<div className="text-sm text-primary-400 mb-3">Tap the green “Add Role” button in the sidebar to create your first role.</div>
 							<div className="flex items-center gap-2 text-xs text-primary-400">
 								<span className="w-2 h-2 bg-accent-500 rounded-full animate-ping" />
-								<span>This will open the Add Role panel for you.</span>
+								<span>Sidebar stays collapsed; the green dot shows you where to start.</span>
 							</div>
 							<div className="absolute -left-2 top-6 w-0 h-0 border-y-8 border-y-transparent border-r-8 border-r-white" />
 						</div>

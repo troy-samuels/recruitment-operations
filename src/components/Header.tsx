@@ -28,13 +28,6 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <a
-              href="#features"
-              className="font-body text-primary-400 hover:text-primary-500 transition-all duration-200 relative group py-2"
-            >
-              Features
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-accent-500 transition-all duration-200 group-hover:w-full"></span>
-            </a>
-            <a
               href="#how-it-works"
               className="font-body text-primary-400 hover:text-primary-500 transition-all duration-200 relative group py-2"
             >
@@ -62,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
             <a href="/login" className="font-body text-primary-400 hover:text-primary-500 transition-all duration-200 px-4 py-2 rounded-lg hover:bg-cream-50">
               Sign in
             </a>
-            <a href="/onboarding" className="font-body bg-accent-500 text-white px-6 py-2 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
+            <a href="/start/account" className="font-body bg-accent-500 text-white px-6 py-2 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
               Get Started
             </a>
           </div>
@@ -87,12 +80,6 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
           <div className="md:hidden border-t border-gray-100 py-4">
             <nav className="flex flex-col space-y-4">
               <a
-                href="#features"
-                className="font-body text-primary-400 hover:text-primary-500 transition-colors duration-200"
-              >
-                Features
-              </a>
-              <a
                 href="#how-it-works"
                 className="font-body text-primary-400 hover:text-primary-500 transition-colors duration-200"
               >
@@ -114,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                 <a href="/login" className="font-body text-primary-400 hover:text-primary-500 transition-all duration-200 text-left px-4 py-2 rounded-lg hover:bg-cream-50">
                   Sign in
                 </a>
-                <a href="/onboarding" className="font-body bg-accent-500 text-white px-6 py-2 rounded-lg hover:bg-accent-600 transition-all duration-200 text-left shadow-sm">
+                <a href="/start/account" className="font-body bg-accent-500 text-white px-6 py-2 rounded-lg hover:bg-accent-600 transition-all duration-200 text-left shadow-sm">
                   Get Started
                 </a>
               </div>

@@ -203,19 +203,7 @@ const AnalyticsInner: React.FC = () => {
                       key={row}
                       className={`w-full aspect-square rounded ${cls} hover:ring-1 hover:ring-blue-400 cursor-pointer`}
                       title={`${cell.d}: ${cell.v}`}
-                      onClick={async ()=>{
-                        setFilterDay(cell.d)
-                        try {
-                          const workspaceId = (typeof window !== 'undefined' && localStorage.getItem('workspace_id')) || ''
-                          if (!workspaceId) return
-                          const q = new URLSearchParams({ workspaceId, date: cell.d, metric })
-                          const res = await fetch(`/api/analytics/events?${q.toString()}`)
-                          const j = await res.json()
-                          if (res.ok && Array.isArray(j?.events)) {
-                            setEvents(j.events.map((e: any) => ({ name: e.name, ts: new Date(e.ts).getTime(), props: { company: e.company, stage: e.stage } })))
-                          }
-                        } catch {}
-                      }}
+                      onClick={()=>{ try { trackEvent('analytics_heat_click', { date: cell.d, value: cell.v }) } catch {} }}
                     />
                   )
                 })}

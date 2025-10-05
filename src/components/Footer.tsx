@@ -82,7 +82,7 @@ const Footer: React.FC = () => {
             <h4 className="font-body text-lg font-semibold text-white mb-4">Product</h4>
             <ul className="space-y-3">
               <li><a href="/" className="font-body text-gray-400 hover:text-white transition-colors">Home</a></li>
-              <li><a href="/pricing" className="font-body text-gray-400 hover:text-white transition-colors">Pricing</a></li>
+              <li><a href="#pricing" className="font-body text-gray-400 hover:text-white transition-colors">Pricing</a></li>
               <li><a href="mailto:info@jobwall.co.uk" className="font-body text-gray-400 hover:text-white transition-colors">Contact</a></li>
             </ul>
           </div>
@@ -193,7 +193,7 @@ const Footer: React.FC = () => {
               </p>
             </div>
             <a href="/start/account" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-body font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap text-center">
-              Start Free Trial
+              Get Started
             </a>
           </div>
         </div>

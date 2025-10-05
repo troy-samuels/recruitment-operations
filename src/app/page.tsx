@@ -60,8 +60,7 @@ export default function Home() {
       </section>
 
 
-      {/* Anchor for Features (maps to demo preview) */}
-      <div id="features" />
+      {/* (Features anchor removed to avoid duplicate target with how-it-works) */}
 
       {/* Dashboard Preview Section (How it works) */}
       <section id="how-it-works" className="py-16 sm:py-24 bg-white">
