@@ -10,7 +10,9 @@ export async function POST(req: NextRequest) {
     }
     const body = await req.json().catch(()=>({}))
     const seats = Math.max(1, Number(body?.seats || 1))
-    const priceId = body?.priceId || process.env.STRIPE_DEFAULT_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID
+    // Accept either priceId or price_id from clients; prefer NEXT_PUBLIC var over private override
+    const bodyPrice = (body?.priceId || body?.price_id || '').toString().trim()
+    const priceId = bodyPrice || (process.env.NEXT_PUBLIC_STRIPE_DEFAULT_PRICE_ID || '').trim() || (process.env.STRIPE_DEFAULT_PRICE_ID || '').trim()
     const workspaceId = body?.workspaceId || null
     if (!priceId) return NextResponse.json({ error: 'Missing priceId' }, { status: 400 })
 
