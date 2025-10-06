@@ -25,6 +25,20 @@ const OnboardingPage: React.FC = () => {
   // Removed global 'max hours since created' per request
   const [individualTarget, setIndividualTarget] = React.useState<number>(10)
   const [revenueTarget, setRevenueTarget] = React.useState<number | ''>('')
+  const [whoCanCreateRoles, setWhoCanCreateRoles] = React.useState<'admin_only' | 'any_member'>(() => {
+    if (typeof window === 'undefined') return 'admin_only'
+    try {
+      const raw = localStorage.getItem('onboarding_settings')
+      if (raw) {
+        const s = JSON.parse(raw)
+        const v = s?.permissions?.whoCanCreateRoles
+        if (v === 'admin_only' || v === 'any_member') return v
+      }
+      const loose = localStorage.getItem('who_can_create_roles')
+      if (loose === 'any_member' || loose === 'admin_only') return loose
+    } catch {}
+    return 'admin_only'
+  })
   const [sourceWithinDays, setSourceWithinDays] = React.useState<number>(3)
 	const [loading, setLoading] = React.useState(false)
 
@@ -113,6 +127,8 @@ const OnboardingPage: React.FC = () => {
       if (revenueTarget && Number(revenueTarget) > 0) {
         settings.targets.revenueGBP = Math.round(Number(revenueTarget))
       }
+      settings.permissions = settings.permissions || {}
+      settings.permissions.whoCanCreateRoles = whoCanCreateRoles
 			localStorage.setItem('onboarding_settings', JSON.stringify(settings))
 			trackEvent('onboarding_completed', { currentQuarter, quarterEndDate })
 			localStorage.setItem('onboarding_complete', '1')
@@ -136,30 +152,15 @@ const OnboardingPage: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      const raw = localStorage.getItem('onboarding_settings')
-                      const s = raw ? (()=>{ try { return JSON.parse(raw) } catch { return {} } })() : {}
-                      s.permissions = s.permissions || {}
-                      s.permissions.whoCanCreateRoles = 'admin_only'
-                      localStorage.setItem('onboarding_settings', JSON.stringify(s))
-                      // also set a simple flag so UI can reflect selection immediately
-                      localStorage.setItem('who_can_create_roles', 'admin_only')
-                    }}
-                    className={`px-3 py-1.5 rounded-md text-sm border ${ (typeof window !== 'undefined' && localStorage.getItem('who_can_create_roles') === 'admin_only') ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}
+                    onClick={() => { setWhoCanCreateRoles('admin_only'); try { localStorage.setItem('who_can_create_roles','admin_only') } catch {} }}
+                    className={`px-3 py-1.5 rounded-md text-sm border ${whoCanCreateRoles==='admin_only' ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}
                   >
                     Admins only
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      const raw = localStorage.getItem('onboarding_settings')
-                      const s = raw ? (()=>{ try { return JSON.parse(raw) } catch { return {} } })() : {}
-                      s.permissions = s.permissions || {}
-                      s.permissions.whoCanCreateRoles = 'any_member'
-                      localStorage.setItem('onboarding_settings', JSON.stringify(s))
-                      localStorage.setItem('who_can_create_roles', 'any_member')
-                    }}
-                    className={`px-3 py-1.5 rounded-md text-sm border ${ (typeof window !== 'undefined' && localStorage.getItem('who_can_create_roles') === 'any_member') ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}
+                    onClick={() => { setWhoCanCreateRoles('any_member'); try { localStorage.setItem('who_can_create_roles','any_member') } catch {} }}
+                    className={`px-3 py-1.5 rounded-md text-sm border ${whoCanCreateRoles==='any_member' ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}
                   >
                     Anyone on my team
                   </button>
