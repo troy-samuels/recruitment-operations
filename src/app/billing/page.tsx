@@ -36,7 +36,7 @@ function BillingClient() {
     (async () => {
       try {
         const res = await fetch('/api/stripe/success', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: sessionId }) })
-        if (res.ok) router.replace('/dashboard')
+        if (res.ok) router.replace('/onboarding')
       } catch {}
     })()
   }, [searchParams, router])
