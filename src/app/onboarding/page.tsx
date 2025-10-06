@@ -39,6 +39,11 @@ const OnboardingPage: React.FC = () => {
     } catch {}
     return 'admin_only'
   })
+
+  // Persist quick toggle so styling reflects immediately across re-renders
+  React.useEffect(() => {
+    try { localStorage.setItem('who_can_create_roles', whoCanCreateRoles) } catch {}
+  }, [whoCanCreateRoles])
   const [sourceWithinDays, setSourceWithinDays] = React.useState<number>(3)
 	const [loading, setLoading] = React.useState(false)
 
@@ -150,20 +155,28 @@ const OnboardingPage: React.FC = () => {
 					<div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Who can create roles?</label>
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => { setWhoCanCreateRoles('admin_only'); try { localStorage.setItem('who_can_create_roles','admin_only') } catch {} }}
-                    className={`px-3 py-1.5 rounded-md text-sm border ${whoCanCreateRoles==='admin_only' ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}
-                  >
+                  <label className={`px-3 py-1.5 rounded-md text-sm border cursor-pointer ${whoCanCreateRoles==='admin_only' ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}>
+                    <input
+                      type="radio"
+                      name="whoCreateRoles"
+                      value="admin_only"
+                      checked={whoCanCreateRoles==='admin_only'}
+                      onChange={(e)=> setWhoCanCreateRoles(e.target.value as any)}
+                      className="sr-only"
+                    />
                     Admins only
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setWhoCanCreateRoles('any_member'); try { localStorage.setItem('who_can_create_roles','any_member') } catch {} }}
-                    className={`px-3 py-1.5 rounded-md text-sm border ${whoCanCreateRoles==='any_member' ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}
-                  >
+                  </label>
+                  <label className={`px-3 py-1.5 rounded-md text-sm border cursor-pointer ${whoCanCreateRoles==='any_member' ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}>
+                    <input
+                      type="radio"
+                      name="whoCreateRoles"
+                      value="any_member"
+                      checked={whoCanCreateRoles==='any_member'}
+                      onChange={(e)=> setWhoCanCreateRoles(e.target.value as any)}
+                      className="sr-only"
+                    />
                     Anyone on my team
-                  </button>
+                  </label>
                 </div>
 					</div>
 					<div>
