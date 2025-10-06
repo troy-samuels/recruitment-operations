@@ -17,18 +17,20 @@ export default function DashboardPage() {
   const [tasksOpen, setTasksOpen] = React.useState(false)
   const [allTasks, setAllTasks] = React.useState<Array<{ id: string; title: string; dueAt?: number; status?: string; roleId?: string; jobTitle?: string; source?: string }>>([])
 
-	React.useEffect(() => {
-		if (typeof window === 'undefined') return
-		const hideCoachmark = () => setShowCoachmark(false)
-		window.addEventListener('open-add-role', hideCoachmark as EventListener)
-		if (localStorage.getItem('just_onboarded') === '1') {
-			setShowCoachmark(true)
-			localStorage.removeItem('just_onboarded')
-			// Show a quick coachmark to point to Add Role, but do not auto-open or expand sidebar
-			setTimeout(() => { setShowCoachmark(false) }, 1800)
-		}
-		return () => window.removeEventListener('open-add-role', hideCoachmark as EventListener)
-	}, [])
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return
+    const hideCoachmark = () => setShowCoachmark(false)
+    window.addEventListener('open-add-role', hideCoachmark as EventListener)
+    const alreadyDismissed = localStorage.getItem('coachmark_dismissed') === '1'
+    if (!alreadyDismissed && localStorage.getItem('just_onboarded') === '1') {
+      setShowCoachmark(true)
+      localStorage.removeItem('just_onboarded')
+      // Auto-hide after a few seconds, but allow manual dismissal
+      const t = setTimeout(() => setShowCoachmark(false), 6000)
+      return () => { clearTimeout(t); window.removeEventListener('open-add-role', hideCoachmark as EventListener) }
+    }
+    return () => window.removeEventListener('open-add-role', hideCoachmark as EventListener)
+  }, [])
 
   React.useEffect(() => {
     const handler = () => setInviteOpen(true)
@@ -219,22 +221,25 @@ export default function DashboardPage() {
 				</div>
 			)}
 
-			{showCoachmark && (
-				<div className="pointer-events-none fixed inset-0 z-40">
-					<div className="absolute inset-0 bg-black/30 animate-[fadeIn_200ms_ease-out]" />
-					<div className="absolute left-16 top-80">
-						<div className="relative bg-white border border-cream-200 shadow-xl rounded-xl p-4 w-72 animate-[slideIn_300ms_ease-out]">
-							<div className="text-sm font-medium text-primary-500 mb-1">Great — setup complete</div>
-							<div className="text-sm text-primary-400 mb-3">Tap the green “Add Role” button in the sidebar to create your first role.</div>
-							<div className="flex items-center gap-2 text-xs text-primary-400">
-								<span className="w-2 h-2 bg-accent-500 rounded-full animate-ping" />
-								<span>Sidebar stays collapsed; the green dot shows you where to start.</span>
-							</div>
-							<div className="absolute -left-2 top-6 w-0 h-0 border-y-8 border-y-transparent border-r-8 border-r-white" />
-						</div>
-					</div>
-				</div>
-			)}
+      {showCoachmark && (
+        <div className="fixed z-40 bottom-6 left-16">
+          <div className="pointer-events-auto bg-white border border-cream-200 shadow-2xl rounded-xl p-4 w-80">
+            <div className="flex items-start gap-3">
+              <span className="mt-1 w-2 h-2 bg-accent-500 rounded-full animate-pulse" />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-primary-600">Setup complete</div>
+                <div className="text-sm text-primary-500 mt-1">Use the green “Add Role” button in the left sidebar to create your first role.</div>
+              </div>
+              <button
+                className="text-xs px-2 py-1 rounded-md border border-gray-300 hover:bg-gray-50"
+                onClick={() => { setShowCoachmark(false); try { localStorage.setItem('coachmark_dismissed','1') } catch {} }}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 		</div>
 	)
 }
