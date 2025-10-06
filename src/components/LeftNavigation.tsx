@@ -31,6 +31,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
   const [openTeam, setOpenTeam] = React.useState(false)
   const [dynamicUrgent, setDynamicUrgent] = React.useState<number>(urgentCount)
   const [nudgeDismissed, setNudgeDismissed] = React.useState(false)
+  const [nudgePhase, setNudgePhase] = React.useState<'icon' | 'inline'>('icon')
 
   // Listen for urgent count updates from the board
   React.useEffect(() => {
@@ -66,6 +67,14 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
     }
   }, [])
 
+  // Animate the green nudge from icon corner to inline position after a short moment
+  React.useEffect(() => {
+    if (nudgeDismissed) return
+    setNudgePhase('icon')
+    const t = setTimeout(() => setNudgePhase('inline'), 2500)
+    return () => clearTimeout(t)
+  }, [nudgeDismissed])
+
   // Collapsed: minimalist icon-only layout with clear section separation
   if (collapsed) {
     return (
@@ -93,7 +102,12 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
                 window.dispatchEvent(evt)
               }}
             >
-              <Plus className="w-4 h-4" />
+              <span className="relative">
+                <Plus className="w-4 h-4" />
+                {!nudgeDismissed && nudgePhase==='icon' && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                )}
+              </span>
             </button>
             <button title="Quick Notes" className="p-2 rounded-lg hover:bg-gray-100">
               <FileText className="w-4 h-4" />
@@ -169,13 +183,18 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
           >
             <span className="relative">
               <Plus className="w-4 h-4 flex-shrink-0" />
-              {!nudgeDismissed && (
+              {!nudgeDismissed && nudgePhase==='icon' && (
                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
               )}
             </span>
             {!collapsed && <span>Add Role</span>}
             {/* Wedge connector when active */}
             {/* connector removed */}
+            {!collapsed && nudgePhase==='inline' && !nudgeDismissed && (
+              <span className="ml-auto flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              </span>
+            )}
           </a>
 
           {/* Quick Notes */}
