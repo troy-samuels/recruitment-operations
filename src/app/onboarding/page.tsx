@@ -128,23 +128,38 @@ const OnboardingPage: React.FC = () => {
 				<p className="font-body text-primary-400 mb-8 text-center">Answer a few questions so your dashboard reflects how you work. You can change these later in Settings.</p>
 				<form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-cream-200 shadow-sm p-6 space-y-6">
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">Who can create roles?</label>
-						<div className="flex gap-2">
-							<button type="button" onClick={() => {
-								const raw = localStorage.getItem('onboarding_settings')
-								const s = raw ? (()=>{ try { return JSON.parse(raw) } catch { return {} } })() : {}
-								s.permissions = s.permissions || {}
-								s.permissions.whoCanCreateRoles = 'admin_only'
-								localStorage.setItem('onboarding_settings', JSON.stringify(s))
-							}} className="px-3 py-1.5 rounded-md text-sm border bg-white text-primary-500 border-cream-300 hover:bg-cream-50">Admins only</button>
-							<button type="button" onClick={() => {
-								const raw = localStorage.getItem('onboarding_settings')
-								const s = raw ? (()=>{ try { return JSON.parse(raw) } catch { return {} } })() : {}
-								s.permissions = s.permissions || {}
-								s.permissions.whoCanCreateRoles = 'any_member'
-								localStorage.setItem('onboarding_settings', JSON.stringify(s))
-							}} className="px-3 py-1.5 rounded-md text-sm border bg-white text-primary-500 border-cream-300 hover:bg-cream-50">Anyone on my team</button>
-						</div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Who can create roles?</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const raw = localStorage.getItem('onboarding_settings')
+                      const s = raw ? (()=>{ try { return JSON.parse(raw) } catch { return {} } })() : {}
+                      s.permissions = s.permissions || {}
+                      s.permissions.whoCanCreateRoles = 'admin_only'
+                      localStorage.setItem('onboarding_settings', JSON.stringify(s))
+                      // also set a simple flag so UI can reflect selection immediately
+                      localStorage.setItem('who_can_create_roles', 'admin_only')
+                    }}
+                    className={`px-3 py-1.5 rounded-md text-sm border ${ (typeof window !== 'undefined' && localStorage.getItem('who_can_create_roles') === 'admin_only') ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}
+                  >
+                    Admins only
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const raw = localStorage.getItem('onboarding_settings')
+                      const s = raw ? (()=>{ try { return JSON.parse(raw) } catch { return {} } })() : {}
+                      s.permissions = s.permissions || {}
+                      s.permissions.whoCanCreateRoles = 'any_member'
+                      localStorage.setItem('onboarding_settings', JSON.stringify(s))
+                      localStorage.setItem('who_can_create_roles', 'any_member')
+                    }}
+                    className={`px-3 py-1.5 rounded-md text-sm border ${ (typeof window !== 'undefined' && localStorage.getItem('who_can_create_roles') === 'any_member') ? 'bg-accent-500 text-white border-accent-500' : 'bg-white text-primary-500 border-cream-300 hover:bg-cream-50'}`}
+                  >
+                    Anyone on my team
+                  </button>
+                </div>
 					</div>
 					<div>
 						<label className="block text-sm font-medium text-gray-700 mb-1">Which quarter are we currently in?</label>
@@ -191,7 +206,7 @@ const OnboardingPage: React.FC = () => {
 						<input type="number" min={1} max={100} value={individualTarget} onChange={(e)=> setIndividualTarget(Number(e.target.value))} className="w-full border border-cream-300 rounded-md px-3 py-2 text-sm" />
 					</div>
 
-					<div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t">
 						<button type="button" onClick={()=> router.push('/')} className="px-4 py-2 rounded-lg text-sm bg-cream-100 text-primary-500 hover:bg-cream-200">Cancel</button>
 						<button disabled={loading} type="submit" className="px-4 py-2 rounded-lg text-sm bg-accent-500 text-white hover:bg-accent-600 disabled:opacity-60">{loading? 'Saving…' : 'Continue to dashboard'}</button>
 					</div>
