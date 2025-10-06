@@ -25,9 +25,7 @@ export default function DashboardPage() {
     if (!alreadyDismissed && localStorage.getItem('just_onboarded') === '1') {
       setShowCoachmark(true)
       localStorage.removeItem('just_onboarded')
-      // Auto-hide after a few seconds, but allow manual dismissal
-      const t = setTimeout(() => setShowCoachmark(false), 6000)
-      return () => { clearTimeout(t); window.removeEventListener('open-add-role', hideCoachmark as EventListener) }
+      return () => { window.removeEventListener('open-add-role', hideCoachmark as EventListener) }
     }
     return () => window.removeEventListener('open-add-role', hideCoachmark as EventListener)
   }, [])
