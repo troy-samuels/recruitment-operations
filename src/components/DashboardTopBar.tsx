@@ -3,9 +3,11 @@
 import React, { useState } from 'react'
 import { Search, ChevronDown, User, Users, BarChart3, Settings, CreditCard, HelpCircle, LogOut, Zap, Clock } from 'lucide-react'
 import { useWorkspace } from '@/components/WorkspaceProvider'
+import { useAuth } from '@/components/AuthProvider'
 
 const DashboardTopBar: React.FC = () => {
   const { workspaceTier, userRole, canInvite, seatsPurchased, seatsUsed, seatsLeft, view, setView } = useWorkspace()
+  const { user } = useAuth()
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false)
   const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false)
   const [isTimeframeMenuOpen, setIsTimeframeMenuOpen] = useState(false)
@@ -93,6 +95,25 @@ const DashboardTopBar: React.FC = () => {
 
   const daysLeft = getDaysLeft()
   const timeLeftLabel = `Days left in Q: ${daysLeft}`
+
+  const getInitials = (label?: string): string => {
+    if (!label) return 'U'
+    const s = label.trim()
+    if (!s) return 'U'
+    const parts = s.split(/\s+/)
+    if (parts.length === 1) return parts[0].slice(0,2).toUpperCase()
+    return (parts[0][0] + parts[1][0]).toUpperCase()
+  }
+  const userName = ((): string | undefined => {
+    if (user?.user_metadata?.name) return user.user_metadata.name as string
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('user_name') || ''
+      if (local) return local
+    }
+    if (user?.email) return String(user.email).split('@')[0]
+    return undefined
+  })()
+  const avatarInitials = getInitials(userName)
 
   return (
     <div className="hidden md:flex bg-white border-b border-gray-200 px-6 lg:px-8 py-4 items-center justify-between">
@@ -191,7 +212,7 @@ const DashboardTopBar: React.FC = () => {
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">JS</span>
+              <span className="text-white text-sm font-medium">{avatarInitials}</span>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-500" />
           </button>
