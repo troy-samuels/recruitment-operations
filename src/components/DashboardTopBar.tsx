@@ -56,6 +56,17 @@ const DashboardTopBar: React.FC = () => {
   const placementsTarget = getTargetForTimeframe()
   const placementsValue = `${achieved}/${placementsTarget}`
 
+  // Optional revenue target surfaced from onboarding settings
+  const revenueTargetGBP = (() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const s = JSON.parse(localStorage.getItem('onboarding_settings') || 'null')
+        return s?.targets?.revenueGBP as number | undefined
+      } catch {}
+    }
+    return undefined
+  })()
+
   const getDaysLeft = (): number => {
     const now = new Date()
     // Prefer user-provided quarter end from onboarding
@@ -146,6 +157,13 @@ const DashboardTopBar: React.FC = () => {
             <span className="text-gray-600">Placements:</span>
             <span className="font-semibold text-gray-900">{placementsValue}</span>
           </div>
+
+        {typeof revenueTargetGBP === 'number' && revenueTargetGBP > 0 && (
+          <div className="flex items-center gap-2 px-2.5 py-1 h-8 rounded-md border border-gray-200 bg-gray-50" title="Revenue target for the quarter">
+            <span className="text-gray-600">Revenue target:</span>
+            <span className="font-semibold text-gray-900">£{new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 }).format(revenueTargetGBP)}</span>
+          </div>
+        )}
 
           <div className="flex items-center gap-1.5 px-2.5 py-1 h-8 rounded-md border border-gray-200 bg-gray-50" title="Time remaining in selected timeframe">
             <span className="text-orange-600 font-semibold">{timeLeftLabel}</span>
@@ -289,6 +307,12 @@ const DashboardTopBar: React.FC = () => {
             <span className="text-gray-600">Placements:</span>
             <span className="font-semibold">{placementsValue}</span>
           </div>
+          {typeof revenueTargetGBP === 'number' && revenueTargetGBP > 0 && (
+            <div className="flex items-center gap-2 px-2 h-7 border border-gray-200 bg-gray-50 text-gray-900 rounded-md">
+              <span className="text-gray-600">Revenue target:</span>
+              <span className="font-semibold">£{new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 }).format(revenueTargetGBP)}</span>
+            </div>
+          )}
           <div className="flex items-center gap-1.5 px-2 h-7 border border-gray-200 bg-gray-50 text-orange-600 rounded-md">
             <span className="font-semibold">{timeLeftLabel}</span>
           </div>

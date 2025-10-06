@@ -24,6 +24,7 @@ const OnboardingPage: React.FC = () => {
 	const [maxStageHours, setMaxStageHours] = React.useState<number>(72)
   // Removed global 'max hours since created' per request
   const [individualTarget, setIndividualTarget] = React.useState<number>(10)
+  const [revenueTarget, setRevenueTarget] = React.useState<number | ''>('')
   const [sourceWithinDays, setSourceWithinDays] = React.useState<number>(3)
 	const [loading, setLoading] = React.useState(false)
 
@@ -101,14 +102,17 @@ const OnboardingPage: React.FC = () => {
 		e.preventDefault()
 		setLoading(true)
 		try {
-			const settings = {
+      const settings: any = {
 				currentQuarter,
 				quarterEndDate,
 				urgentRules: { maxStageHours },
 				sourcing: { sourceWithinHours: Math.max(1, sourceWithinDays) * 24 },
-				targets: { individualPlacements: Math.max(1, Math.round(individualTarget)) },
+        targets: { individualPlacements: Math.max(1, Math.round(individualTarget)) },
 				defaultView: 'individual'
 			}
+      if (revenueTarget && Number(revenueTarget) > 0) {
+        settings.targets.revenueGBP = Math.round(Number(revenueTarget))
+      }
 			localStorage.setItem('onboarding_settings', JSON.stringify(settings))
 			trackEvent('onboarding_completed', { currentQuarter, quarterEndDate })
 			localStorage.setItem('onboarding_complete', '1')
@@ -205,6 +209,11 @@ const OnboardingPage: React.FC = () => {
 						<label className="block text-sm font-medium text-gray-700 mb-1">Quarterly placement target (you)</label>
 						<input type="number" min={1} max={100} value={individualTarget} onChange={(e)=> setIndividualTarget(Number(e.target.value))} className="w-full border border-cream-300 rounded-md px-3 py-2 text-sm" />
 					</div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Optional revenue target (GBP, quarter)</label>
+            <input type="number" min={0} placeholder="e.g. 20000" value={revenueTarget} onChange={(e)=> setRevenueTarget(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-cream-300 rounded-md px-3 py-2 text-sm" />
+            <p className="text-xs text-primary-400 mt-1">If set, we’ll show this alongside placements in the top bar.</p>
+          </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
 						<button type="button" onClick={()=> router.push('/')} className="px-4 py-2 rounded-lg text-sm bg-cream-100 text-primary-500 hover:bg-cream-200">Cancel</button>
