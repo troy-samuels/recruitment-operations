@@ -8,6 +8,9 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  LineChart,
+  Line,
+  ReferenceLine,
   Tooltip as RTooltip,
   PieChart,
   Pie,
@@ -23,7 +26,7 @@ const AnalyticsInner: React.FC = () => {
   const { view, setView, workspaceTier } = useWorkspace()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [range, setRange] = React.useState<'7d'|'30d'|'90d'>('30d')
+  const [range, setRange] = React.useState<'month'|'quarter'|'year'|'all'>('quarter')
   // simplified analytics: focused tiles
   const [summary, setSummary] = React.useState<any>(null)
   const [heat, setHeat] = React.useState<Array<{ d: string; v: number }>>([])
@@ -46,7 +49,7 @@ const AnalyticsInner: React.FC = () => {
   React.useEffect(() => {
     const r = searchParams.get('range') as any
     const v = searchParams.get('view') as any
-    if (r && ['7d','30d','90d'].includes(r)) setRange(r)
+    if (r && ['month','quarter','year','all'].includes(r)) setRange(r)
     if (v && ['individual','team'].includes(v)) {
       if (v === 'team' && workspaceTier !== 'team') {
         // ignore if not allowed
@@ -72,6 +75,7 @@ const AnalyticsInner: React.FC = () => {
   const { data: swrSummary } = useSWR(qsBase ? `/api/analytics/summary${qsBase}` : null, fetcher)
   const { data: swrHeat } = useSWR(qsBase ? `/api/analytics/heatmap${qsBase}&metric=stage_moves` : null, fetcher)
   const { data: swrLbT } = useSWR(qsBase ? `/api/analytics/leaderboard${qsBase}&type=teammates&limit=8&offset=${lbTeamOffset}` : null, fetcher)
+  const { data: swrPlacementsTs } = useSWR(workspaceId ? `/api/analytics/timeseries?workspaceId=${encodeURIComponent(workspaceId)}&metric=placements&range=quarter` : null, fetcher)
 
   React.useEffect(() => { setSummary(swrSummary || null) }, [swrSummary])
   React.useEffect(() => { setHeat(swrHeat?.cells || []) }, [swrHeat])
@@ -239,24 +243,34 @@ const AnalyticsInner: React.FC = () => {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <select value={view} onChange={(e)=> setView(e.target.value as any)} className="border border-gray-300 rounded-md px-2 py-1 text-sm">
+        <div className="flex items-center gap-2">
+          <select value={view} onChange={(e)=> setView(e.target.value as any)} className="border border-gray-300 rounded-md px-2 py-1 text-sm">
               <option value="individual">Individual</option>
               {workspaceTier==='team' && <option value="team">Team</option>}
             </select>
-            <select value={range} onChange={(e)=> setRange(e.target.value as any)} className="border border-gray-300 rounded-md px-2 py-1 text-sm">
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-            </select>
+          <select value={range} onChange={(e)=> setRange(e.target.value as any)} className="border border-gray-300 rounded-md px-2 py-1 text-sm">
+            <option value="month">Month</option>
+            <option value="quarter">Quarter</option>
+            <option value="year">Year</option>
+            <option value="all">All time</option>
+          </select>
           </div>
         </div>
-        {/* KPI strip with sparklines */}
+        {/* KPI strip with simplified Placements tile */}
         <div className="grid md:grid-cols-5 gap-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-xs text-gray-500">Placements</div>
-            <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.placementsQTD ?? summary?.kpis?.placementsRange ?? 0}</div>
-            <Sparkline data={summary?.sparks?.placements} />
+          <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col items-center justify-center">
+            <div className="w-full flex items-center justify-between">
+              <div className="text-xs text-gray-500">Placements</div>
+              <select value={range} onChange={(e)=> setRange(e.target.value as any)} className="text-xs border border-gray-200 rounded px-1 py-0.5">
+                <option value="month">Month</option>
+                <option value="quarter">Quarter</option>
+                <option value="year">Year</option>
+                <option value="all">All</option>
+              </select>
+            </div>
+            <div className="mt-2 text-4xl font-extrabold text-gray-900 text-center">
+              {summary?.kpis?.placementsRange ?? summary?.kpis?.placementsQTD ?? 0}
+            </div>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <div className="text-xs text-gray-500">Weighted pipeline</div>
@@ -293,8 +307,29 @@ const AnalyticsInner: React.FC = () => {
             <Gauge pct={summary?.kpis?.slaPct ?? 0} />
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-medium text-gray-800 mb-2">Consultants (placements)</div>
-            <BarLeaders rows={leadersTeam || []} />
+            <div className="text-sm font-medium text-gray-800 mb-2">Cumulative placements (quarter)</div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={(swrPlacementsTs?.points || []).reduce((acc: Array<{t:string; v:number}>, p: {t:string; v:number}) => {
+                  const last = acc.length ? acc[acc.length-1].v : 0
+                  acc.push({ t: p.t, v: last + (p.v || 0) })
+                  return acc
+                }, [])} margin={{ top: 4, right: 8, left: 8, bottom: 16 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="t" tick={{ fontSize: 10 }} hide={false} />
+                  <YAxis allowDecimals={false} width={28} tick={{ fontSize: 10 }} />
+                  <Line type="monotone" dataKey="v" stroke={brandColors.accent} strokeWidth={2} dot={false} />
+                  {(() => {
+                    let target = 0
+                    try {
+                      const s = JSON.parse(localStorage.getItem('onboarding_settings') || 'null')
+                      target = Number(s?.targets?.individualPlacements || 0)
+                    } catch {}
+                    return target > 0 ? <ReferenceLine y={target} stroke={brandColors.gray400} strokeDasharray="4 4" label={{ value: `Target ${target}`, position: 'right', fill: '#6b7280', fontSize: 11 }} /> : null
+                  })()}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 

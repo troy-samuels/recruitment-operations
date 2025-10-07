@@ -342,11 +342,14 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
 
       {/* Settings at bottom */}
       <div className={`mt-auto ${collapsed ? 'p-2' : 'p-4'}`}>
-        <button className={`flex items-center ${collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2'} text-sm text-gray-700 hover:bg-gray-100 rounded-lg w-full transition-colors`}
-                title={collapsed ? "Settings" : ""}>
+        <a
+          href="/settings/pipeline"
+          className={`flex items-center ${collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2'} text-sm text-gray-700 hover:bg-gray-100 rounded-lg w-full transition-colors`}
+          title={collapsed ? "Pipeline Settings" : ""}
+        >
           <Settings className="w-4 h-4 flex-shrink-0" />
-          {!collapsed && <span>Settings</span>}
-        </button>
+          {!collapsed && <span>Pipeline Settings</span>}
+        </a>
       </div>
     </div>
   )

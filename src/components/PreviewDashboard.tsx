@@ -17,12 +17,12 @@ const PreviewDashboard: React.FC<PreviewDashboardProps> = ({ compact = false }) 
   const [rightCollapsed, setRightCollapsed] = useState(true)
 
   if (compact) {
-    // Compact embed mode for homepage demo
+    // Compact embed mode for homepage demo (disabled for interaction)
     return (
       <WorkspaceProvider>
         <div className="demo-embed bg-gray-100 h-[420px] sm:h-[520px] overflow-hidden">
           <div className="h-full p-2 sm:p-3">
-            <AnimatedKanban leftCollapsed rightCollapsed />
+            <AnimatedKanban leftCollapsed rightCollapsed disabled />
           </div>
         </div>
       </WorkspaceProvider>

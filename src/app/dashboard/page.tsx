@@ -8,7 +8,7 @@ import EmailTemplatesModal from '@/components/EmailTemplatesModal'
 import { trackEvent } from '@/lib/metrics'
 
 export default function DashboardPage() {
-	const [editPayload, setEditPayload] = React.useState<{ card: any; candidates: any[]; tasks?: any[] } | null>(null)
+	const [editPayload, setEditPayload] = React.useState<{ card: any; candidates: any[]; tasks?: any[]; activityLog?: any[] } | null>(null)
 	const [addRoleOpen, setAddRoleOpen] = React.useState(false)
 	const [showCoachmark, setShowCoachmark] = React.useState(false)
   const [inviteOpen, setInviteOpen] = React.useState(false)
@@ -117,7 +117,7 @@ export default function DashboardPage() {
 				initialCards={[]}
 			/>
 			<AddRoleSlideOver open={addRoleOpen} onClose={()=> setAddRoleOpen(false)} onSubmit={()=> setAddRoleOpen(false)} sidebarWidthPx={256} topOffsetPx={64} />
-			<RoleEditorPopup open={!!editPayload} onClose={()=> setEditPayload(null)} card={editPayload?.card} candidates={editPayload?.candidates || []} tasks={editPayload?.tasks || []} />
+			<RoleEditorPopup open={!!editPayload} onClose={()=> setEditPayload(null)} card={editPayload?.card} candidates={editPayload?.candidates || []} tasks={editPayload?.tasks || []} activityLog={editPayload?.activityLog || []} />
 			<TeamInviteModal open={inviteOpen} onClose={()=> setInviteOpen(false)} />
 
 			{urgentOpen && (

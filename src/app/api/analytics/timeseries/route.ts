@@ -21,17 +21,70 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const metric = (searchParams.get('metric') || 'placements') as 'placements'|'interviews'|'cv_sent'|'tasks_completed'
-    const range = (searchParams.get('range') || '30d') as '7d'|'30d'|'90d'
+    const rangeRaw = (searchParams.get('range') || '30d').toLowerCase()
     const workspaceId = searchParams.get('workspaceId')
     const isPrev = searchParams.get('prev') === '1'
     if (!workspaceId) return NextResponse.json({ error: 'workspaceId required' }, { status: 400 })
 
     const admin = getSupabaseAdmin()
     const nowReal = new Date()
-    const now = new Date(isPrev ? (new Date().setDate(nowReal.getDate() - (range === '7d' ? 7 : range === '30d' ? 30 : 90))) : nowReal)
-    const start = new Date(now)
-    const days = range === '7d' ? 7 : range === '30d' ? 30 : 90
-    start.setDate(now.getDate() - days + 1)
+    const now = new Date(isPrev ? (new Date().setDate(nowReal.getDate() - 1)) : nowReal)
+    let start = new Date(now)
+    let days = 30
+    const setQuarterStart = () => {
+      const q = Math.floor(now.getMonth() / 3)
+      const startMonth = q * 3
+      start = new Date(now.getFullYear(), startMonth, 1)
+      const diffMs = now.getTime() - start.getTime()
+      days = Math.max(1, Math.floor(diffMs / (1000*60*60*24)) + 1)
+    }
+    switch (rangeRaw) {
+      case '7d': start.setDate(now.getDate() - 6); days = 7; break
+      case '30d':
+      case 'month': start.setDate(now.getDate() - 29); days = 30; break
+      case '90d': start.setDate(now.getDate() - 89); days = 90; break
+      case '365d':
+      case 'year': start.setDate(now.getDate() - 364); days = 365; break
+      case 'quarter': setQuarterStart(); break
+      case 'all': {
+        // Determine earliest available day for this metric
+        let minDay: string | null = null
+        try {
+          const { data: minView } = await admin
+            .from('events_daily_counts')
+            .select('day')
+            .eq('workspace_id', workspaceId)
+            .in('event_name', ['placement_created','interview_scheduled','cv_sent','task_completed'].includes(metric)
+              ? (metric==='placements' ? ['placement_created'] : metric==='interviews' ? ['interview_scheduled'] : metric==='cv_sent' ? ['cv_sent'] : ['task_completed'])
+              : ['placement_created'])
+            .order('day', { ascending: true })
+            .limit(1)
+            .maybeSingle()
+          if (minView?.day) minDay = new Date(minView.day as any).toISOString().slice(0,10)
+        } catch {}
+        if (!minDay) {
+          try {
+            const { data: minEvt } = await admin
+              .from('events')
+              .select('ts')
+              .eq('workspace_id', workspaceId)
+              .order('ts', { ascending: true })
+              .limit(1)
+              .maybeSingle()
+            if (minEvt?.ts) minDay = new Date(minEvt.ts as any).toISOString().slice(0,10)
+          } catch {}
+        }
+        if (!minDay) {
+          // no data
+          return NextResponse.json({ points: [] })
+        }
+        start = new Date(minDay + 'T00:00:00Z')
+        const diffMs = now.getTime() - start.getTime()
+        days = Math.max(1, Math.floor(diffMs / (1000*60*60*24)) + 1)
+        break
+      }
+      default: start.setDate(now.getDate() - 29); days = 30
+    }
 
     const nameMap: Record<string, string[]> = {
       placements: ['placement_created'],

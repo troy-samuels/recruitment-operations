@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { User, Briefcase, Phone, Calendar, Pencil, X, Plus, MoreHorizontal, CheckSquare, Square, Trash2, MoveRight } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
 import {
   DndContext,
   DragEndEvent,
@@ -24,6 +25,16 @@ import { CSS } from '@dnd-kit/utilities'
 import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import { useWorkspace } from '@/components/WorkspaceProvider'
 import { trackEvent } from '@/lib/metrics'
+import { loadPipelineStages, type PipelineStage } from '@/lib/pipelineStages'
+
+interface ActivityLogEntry {
+  id: string
+  type: 'call' | 'email' | 'meeting' | 'note' | 'feedback'
+  candidateName?: string
+  note: string
+  timestamp: number
+  user: string
+}
 
 interface JobCard {
   id: string
@@ -37,6 +48,7 @@ interface JobCard {
   controlLevel?: 'high' | 'medium' | 'low'
   createdAt?: number
   stageUpdatedAt?: number
+  activityLog?: ActivityLogEntry[]
 }
 
 interface CandidateRow {
@@ -435,7 +447,7 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
 interface AnimatedKanbanProps {
   leftCollapsed?: boolean
   rightCollapsed?: boolean
-  onOpenEditor?: (payload: { card: JobCard; candidates: CandidateRow[]; tasks?: TaskItem[] }) => void
+  onOpenEditor?: (payload: { card: JobCard; candidates: CandidateRow[]; tasks?: TaskItem[]; activityLog?: ActivityLogEntry[] }) => void
   initialCards?: JobCard[]
   disabled?: boolean
 }
@@ -624,10 +636,15 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
   useEffect(() => {
     const handler = (e: Event) => {
       const anyEvent = e as any
-      const detail = anyEvent.detail as { card: JobCard; candidates: CandidateRow[]; tasks?: TaskItem[] }
+      const detail = anyEvent.detail as { card: JobCard; candidates: CandidateRow[]; tasks?: TaskItem[]; activityLog?: ActivityLogEntry[] }
       if (!detail || !detail.card || !detail.card.id) return
 
-      setJobCards(prev => prev.map(c => (c.id === detail.card.id ? { ...c, ...detail.card } : c)))
+      const updatedCard = { ...detail.card }
+      if (detail.activityLog) {
+        updatedCard.activityLog = detail.activityLog
+      }
+
+      setJobCards(prev => prev.map(c => (c.id === detail.card.id ? { ...c, ...updatedCard } : c)))
       setCandidatesByCard(prev => ({ ...prev, [detail.card.id]: detail.candidates || [] }))
       if (detail.tasks) setTasksByCard(prev => ({ ...prev, [detail.card.id]: detail.tasks! }))
     }
@@ -696,11 +713,14 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
   }, [])
 
   // Maintain simple per-stage ordering (array of ids per stage)
-  const [stageOrder, setStageOrder] = useState<Record<number, string[]>>({
-    0: jobCards.filter(c => c.stage === 0).map(c => c.id),
-    1: jobCards.filter(c => c.stage === 1).map(c => c.id),
-    2: jobCards.filter(c => c.stage === 2).map(c => c.id),
-    3: jobCards.filter(c => c.stage === 3).map(c => c.id),
+  // Dynamically initialize based on current pipeline configuration
+  const [stageOrder, setStageOrder] = useState<Record<number, string[]>>(() => {
+    const initialOrder: Record<number, string[]> = {}
+    const loadedStages = loadPipelineStages()
+    loadedStages.forEach((_, index) => {
+      initialOrder[index] = jobCards.filter(c => c.stage === index).map(c => c.id)
+    })
+    return initialOrder
   })
 
   // Map for quick lookup
@@ -786,12 +806,42 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
     })
   }, [sensors])
 
-  const stages = [
-    { name: 'New Leads', icon: User, color: 'bg-gray-100 border-gray-200', stage: 0 },
-    { name: 'Contacted', icon: Phone, color: 'bg-blue-50 border-blue-200', stage: 1 },
-    { name: 'Interview', icon: Calendar, color: 'bg-orange-50 border-orange-200', stage: 2 },
-    { name: 'Placed', icon: Briefcase, color: 'bg-green-50 border-green-200', stage: 3 },
-  ]
+  // Dynamic pipeline stages loaded from configuration
+  const [pipelineConfig, setPipelineConfig] = useState<PipelineStage[]>(() => loadPipelineStages())
+
+  // Listen for pipeline stage configuration changes
+  useEffect(() => {
+    const handleStagesUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent
+      const newStages = customEvent.detail?.stages
+      if (newStages && Array.isArray(newStages)) {
+        setPipelineConfig(newStages)
+        // Reinitialize stageOrder with new stage count
+        const newStageOrder: Record<number, string[]> = {}
+        newStages.forEach((_, index) => {
+          newStageOrder[index] = jobCards.filter(c => c.stage === index).map(c => c.id)
+        })
+        setStageOrder(newStageOrder)
+      }
+    }
+
+    window.addEventListener('pipeline-stages-updated', handleStagesUpdated)
+    return () => window.removeEventListener('pipeline-stages-updated', handleStagesUpdated)
+  }, [jobCards])
+
+  // Map pipeline config to stage display format with icon components
+  const stages = useMemo(() => {
+    return pipelineConfig.map((stage, index) => {
+      // Get icon component from lucide-react dynamically
+      const IconComponent = (LucideIcons as any)[stage.icon] || User
+      return {
+        name: stage.name,
+        icon: IconComponent,
+        color: stage.color,
+        stage: index,
+      }
+    })
+  }, [pipelineConfig])
 
   // Urgency rules configurable at onboarding; read overrides from onboarding_settings
   const urgencyRules = (() => {
@@ -1447,7 +1497,7 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
             const handleOpen = (id: string) => {
               const c = idToCard[id]
               if (!c) return
-              const payload = { card: c, candidates: candidatesByCard[id] || [], tasks: tasksByCard[id] || [] }
+              const payload = { card: c, candidates: candidatesByCard[id] || [], tasks: tasksByCard[id] || [], activityLog: c.activityLog || [] }
               onOpenEditor && onOpenEditor(payload)
             }
             return (
