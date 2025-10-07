@@ -14,7 +14,8 @@ import {
   FileText,
   Settings,
   Zap,
-  User
+  User,
+  Mail
 } from 'lucide-react'
 import { ChevronDown } from 'lucide-react'
 import { useWorkspace } from '@/components/WorkspaceProvider'
@@ -112,6 +113,13 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
             <button title="Quick Notes" className="p-2 rounded-lg hover:bg-gray-100">
               <FileText className="w-4 h-4" />
             </button>
+            <button
+              title="Email Templates"
+              className="p-2 rounded-lg hover:bg-gray-100"
+              onClick={() => window.dispatchEvent(new Event('open-email-templates'))}
+            >
+              <Mail className="w-4 h-4" />
+            </button>
 
             {/* Divider */}
             <div className="w-full h-px bg-gray-200 my-2" />
@@ -206,6 +214,20 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
           >
             <FileText className="w-4 h-4 flex-shrink-0" />
             {!collapsed && <span>Quick Notes</span>}
+          </a>
+
+          {/* Email Templates */}
+          <a
+            href="#"
+            className={`flex items-center ${collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2'} text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors`}
+            title={collapsed ? "Email Templates" : ""}
+            onClick={(e) => {
+              e.preventDefault()
+              window.dispatchEvent(new Event('open-email-templates'))
+            }}
+          >
+            <Mail className="w-4 h-4 flex-shrink-0" />
+            {!collapsed && <span>Email Templates</span>}
           </a>
         </nav>
       </div>

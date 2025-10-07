@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { User, Briefcase, Phone, Calendar, Pencil, X, Plus, MoreHorizontal } from 'lucide-react'
+import { User, Briefcase, Phone, Calendar, Pencil, X, Plus, MoreHorizontal, CheckSquare, Square, Trash2, MoveRight } from 'lucide-react'
 import {
   DndContext,
   DragEndEvent,
@@ -136,6 +136,9 @@ interface DraggableCardProps {
   onOpenEditor?: (id: string) => void
   density?: 'comfortable' | 'compact'
   tasksCount?: number
+  bulkMode?: boolean
+  isSelected?: boolean
+  onToggleSelect?: (id: string) => void
 }
 
 interface DroppableColumnProps {
@@ -148,6 +151,9 @@ interface DroppableColumnProps {
   onOpenEditor?: (id: string) => void
   density?: 'comfortable' | 'compact'
   taskCountByCard?: Record<string, number>
+  bulkMode?: boolean
+  selectedCards?: Set<string>
+  onToggleSelect?: (id: string) => void
 }
 
 // Pure presentational component for DragOverlay - NO positioning logic
@@ -182,7 +188,7 @@ const OverlayCard: React.FC<{ card: JobCard }> = ({ card }) => {
   )
 }
 
-const DraggableCard: React.FC<DraggableCardProps> = ({ card, isOverlay = false, onOpenEditor, density = 'comfortable', tasksCount = 0 }) => {
+const DraggableCard: React.FC<DraggableCardProps> = ({ card, isOverlay = false, onOpenEditor, density = 'comfortable', tasksCount = 0, bulkMode = false, isSelected = false, onToggleSelect }) => {
   // If this is an overlay, use the pure presentational component
   if (isOverlay) {
     return <OverlayCard card={card} />
@@ -200,6 +206,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, isOverlay = false, 
       type: 'card',
       card: card,
     },
+    disabled: bulkMode, // Disable dragging in bulk mode
   })
 
   // Debug logging for draggable card registration
@@ -222,21 +229,51 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, isOverlay = false, 
   // CRITICAL: Never use pointer-events-none on dragging elements as it breaks drag functionality
   const paddingClass = density === 'compact' ? 'p-2' : 'p-2 sm:p-3'
   const cardClasses = `
-    bg-white relative ${paddingClass} pl-2 sm:pl-3 rounded-xl ring-1 ring-gray-200 shadow-sm cursor-grab active:cursor-grabbing
+    bg-white relative ${paddingClass} pl-2 sm:pl-3 rounded-xl ring-1 ring-gray-200 shadow-sm ${bulkMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'}
     hover:shadow-md transition-shadow duration-200 w-full
     ${isDragging ? 'opacity-0' : 'hover:ring-gray-300'}
+    ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''}
   `.trim()
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (bulkMode && onToggleSelect) {
+      e.preventDefault()
+      e.stopPropagation()
+      onToggleSelect(card.id)
+    }
+  }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
+      {...(!bulkMode ? listeners : {})}
+      {...(!bulkMode ? attributes : {})}
       className={cardClasses}
       data-draggable-card="true"
       data-testid="draggable-card"
+      onClick={handleCardClick}
     >
+      {/* Bulk selection checkbox */}
+      {bulkMode && (
+        <div className="absolute top-2 left-2 z-10">
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onToggleSelect && onToggleSelect(card.id)
+            }}
+            className="w-5 h-5 rounded border-2 border-gray-400 bg-white hover:border-blue-500 flex items-center justify-center transition-colors"
+          >
+            {isSelected && (
+              <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
+
       <span
         className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
         style={{ backgroundColor: accentColorFromLevel(card.controlLevel) }}
@@ -309,7 +346,10 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
   isOver = false,
   onOpenEditor,
   density = 'comfortable',
-  taskCountByCard = {}
+  taskCountByCard = {},
+  bulkMode = false,
+  selectedCards = new Set(),
+  onToggleSelect
 }) => {
   const droppableId = `column-${stage}`
   const { setNodeRef } = useDroppable({
@@ -364,7 +404,16 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
         {cards.map((card) => {
           const tasksCount = taskCountByCard[card.id] || 0
           return (
-            <DraggableCard key={card.id} card={card} onOpenEditor={onOpenEditor} density={density} tasksCount={tasksCount} />
+            <DraggableCard
+              key={card.id}
+              card={card}
+              onOpenEditor={onOpenEditor}
+              density={density}
+              tasksCount={tasksCount}
+              bulkMode={bulkMode}
+              isSelected={selectedCards.has(card.id)}
+              onToggleSelect={onToggleSelect}
+            />
           )
         })}
 
@@ -422,6 +471,84 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
   const [columnWidth, setColumnWidth] = useState<number>(160)
   const measureRef = useRef<HTMLDivElement>(null)
   const [urgentCount, setUrgentCount] = useState<number>(0)
+
+  // Bulk Actions state (completely isolated)
+  const [bulkMode, setBulkMode] = useState(false)
+  const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set())
+
+  // Bulk Actions handlers
+  const toggleBulkMode = () => {
+    setBulkMode(prev => !prev)
+    if (bulkMode) {
+      setSelectedCards(new Set()) // Clear selection when exiting bulk mode
+    }
+  }
+
+  const toggleCardSelection = (cardId: string) => {
+    setSelectedCards(prev => {
+      const next = new Set(prev)
+      if (next.has(cardId)) {
+        next.delete(cardId)
+      } else {
+        next.add(cardId)
+      }
+      return next
+    })
+  }
+
+  const selectAllCards = () => {
+    setSelectedCards(new Set(jobCards.map(c => c.id)))
+  }
+
+  const deselectAllCards = () => {
+    setSelectedCards(new Set())
+  }
+
+  const deleteSelectedCards = () => {
+    if (selectedCards.size === 0) return
+    if (!confirm(`Delete ${selectedCards.size} selected role(s)?`)) return
+
+    selectedCards.forEach(id => {
+      window.dispatchEvent(new CustomEvent('kanban-delete-card', { detail: { id } }))
+    })
+    setSelectedCards(new Set())
+    setBulkMode(false)
+  }
+
+  const moveSelectedCardsToStage = (targetStage: number) => {
+    if (selectedCards.size === 0) return
+
+    selectedCards.forEach(cardId => {
+      const card = idToCard[cardId]
+      if (card && card.stage !== targetStage) {
+        setJobCards(prev => prev.map(c =>
+          c.id === cardId
+            ? { ...c, stage: targetStage, stageUpdatedAt: Date.now() }
+            : c
+        ))
+      }
+    })
+    setSelectedCards(new Set())
+    setBulkMode(false)
+  }
+
+  // Keyboard shortcuts for bulk mode
+  useEffect(() => {
+    if (!bulkMode) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
+        e.preventDefault()
+        selectAllCards()
+      } else if (e.key === 'Escape') {
+        setBulkMode(false)
+        setSelectedCards(new Set())
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [bulkMode, jobCards])
 
   // Listen for external role additions and insert a new card at start of stage 0
   useEffect(() => {
@@ -1257,12 +1384,23 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
 
   return (
     <div className="w-full bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
-      <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center gap-4">
+      <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between gap-4">
         <div>
           <h2 className="font-heading text-2xl font-bold text-gray-900">My Pipeline</h2>
-          <p className="font-body text-sm text-gray-600 mt-1">Drag and drop candidates through your recruitment process</p>
+          <p className="font-body text-sm text-gray-600 mt-1">{bulkMode ? 'Select roles to perform bulk actions' : 'Drag and drop candidates through your recruitment process'}</p>
         </div>
-        {/* Density toggle removed for a single clean layout */}
+        {/* Bulk Mode Toggle */}
+        <button
+          onClick={toggleBulkMode}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+            bulkMode
+              ? 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          {bulkMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+          {bulkMode ? `Bulk Mode (${selectedCards.size})` : 'Select Multiple'}
+        </button>
       </div>
 
       <div className="p-6 bg-gray-50" ref={measureRef}>
@@ -1324,6 +1462,9 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
                   onOpenEditor={onOpenEditor ? handleOpen : undefined}
                   density={'comfortable'}
                   taskCountByCard={Object.fromEntries(stageCards.map(c => [c.id, (tasksByCard[c.id] || []).length]))}
+                  bulkMode={bulkMode}
+                  selectedCards={selectedCards}
+                  onToggleSelect={toggleCardSelection}
                 />
               </div>
             )
@@ -1339,6 +1480,48 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
               <div className="h-full bg-gradient-to-l from-gray-200/50 to-transparent" />
             </div>
           </div>
+
+          {/* Bulk Action Toolbar */}
+          {bulkMode && selectedCards.size > 0 && (
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white rounded-lg shadow-2xl px-6 py-4 flex items-center gap-4">
+              <span className="font-medium">{selectedCards.size} selected</span>
+              <div className="h-6 w-px bg-gray-600" />
+              <button
+                onClick={selectAllCards}
+                className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-md text-sm font-medium transition-colors"
+              >
+                Select All
+              </button>
+              <button
+                onClick={deselectAllCards}
+                className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-md text-sm font-medium transition-colors"
+              >
+                Deselect All
+              </button>
+              <div className="h-6 w-px bg-gray-600" />
+              <div className="flex items-center gap-2">
+                <MoveRight className="w-4 h-4" />
+                <span className="text-sm">Move to:</span>
+                {stages.map(stage => (
+                  <button
+                    key={stage.stage}
+                    onClick={() => moveSelectedCardsToStage(stage.stage)}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-md text-sm font-medium transition-colors"
+                  >
+                    {stage.name}
+                  </button>
+                ))}
+              </div>
+              <div className="h-6 w-px bg-gray-600" />
+              <button
+                onClick={deleteSelectedCards}
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
+          )}
 
           <DragOverlay
             modifiers={[snapCenterToCursor]}

@@ -4,6 +4,7 @@ import AnimatedKanban from '@/components/AnimatedKanban'
 import AddRoleSlideOver from '@/components/AddRoleSlideOver'
 import RoleEditorPopup from '@/components/RoleEditorPopup'
 import TeamInviteModal from '@/components/TeamInviteModal'
+import EmailTemplatesModal from '@/components/EmailTemplatesModal'
 import { trackEvent } from '@/lib/metrics'
 
 export default function DashboardPage() {
@@ -11,6 +12,7 @@ export default function DashboardPage() {
 	const [addRoleOpen, setAddRoleOpen] = React.useState(false)
 	const [showCoachmark, setShowCoachmark] = React.useState(false)
   const [inviteOpen, setInviteOpen] = React.useState(false)
+  const [emailTemplatesOpen, setEmailTemplatesOpen] = React.useState(false)
   const [urgentOpen, setUrgentOpen] = React.useState(false)
   const [urgentItems, setUrgentItems] = React.useState<Array<{ id: string; jobTitle: string; company?: string; stage: string; hoursOver: number }>>([])
   const [urgentTasks, setUrgentTasks] = React.useState<Array<{ id: string; taskId: string; title: string; jobTitle: string; company?: string; dueAt: number; dueInHours: number; overdue: boolean; roleId: string }>>([])
@@ -34,6 +36,12 @@ export default function DashboardPage() {
     const handler = () => setInviteOpen(true)
     window.addEventListener('open-invite-modal', handler)
     return () => window.removeEventListener('open-invite-modal', handler)
+  }, [])
+
+  React.useEffect(() => {
+    const handler = () => setEmailTemplatesOpen(true)
+    window.addEventListener('open-email-templates', handler)
+    return () => window.removeEventListener('open-email-templates', handler)
   }, [])
 
   // Task Center modal
@@ -226,7 +234,7 @@ export default function DashboardPage() {
               <span className="mt-1 w-2 h-2 bg-accent-500 rounded-full animate-pulse" />
               <div className="flex-1">
                 <div className="text-sm font-medium text-primary-600">Setup complete</div>
-                <div className="text-sm text-primary-500 mt-1">Use the green “Add Role” button in the left sidebar to create your first role.</div>
+                <div className="text-sm text-primary-500 mt-1">Use the green "Add Role" button in the left sidebar to create your first role.</div>
               </div>
               <button
                 className="text-xs px-2 py-1 rounded-md border border-gray-300 hover:bg-gray-50"
@@ -238,6 +246,11 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <EmailTemplatesModal
+        isOpen={emailTemplatesOpen}
+        onClose={() => setEmailTemplatesOpen(false)}
+      />
 		</div>
 	)
 }
