@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { trackEvent } from '@/lib/metrics'
-import { Calendar, Pencil, User, X, Phone, Mail, MessageSquare, FileText, Clock } from 'lucide-react'
+import { Calendar, Pencil, User, X, Phone, Mail, MessageSquare, FileText, Clock, Trash2 } from 'lucide-react'
 
 interface CandidateRow {
   id: string
@@ -74,18 +74,40 @@ const RoleEditorPopup: React.FC<RoleEditorPopupProps> = ({ open, onClose, card, 
 
   if (!open || !card) return null
 
+  const ensureCandidateId = React.useCallback(() => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+    return `candidate-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
+  }, [])
+
   const handleToggleCall = (id: string) => {
     setLocalCandidates(prev => prev.map(c => c.id === id ? { ...c, callBooked: !c.callBooked } : c))
   }
 
-  const handleAddRef = (id: string) => {
-    setLocalCandidates(prev => prev.map(c => c.id === id ? { ...c, refsCount: Math.min(2, (c.refsCount || 0) + 1) } : c))
+  const handleRefsChange = (id: string, delta: number) => {
+    setLocalCandidates(prev => prev.map(c => {
+      if (c.id !== id) return c
+      const next = Math.max(0, Math.min(2, (c.refsCount || 0) + delta))
+      return { ...c, refsCount: next }
+    }))
+  }
+
+  const handleCandidateNameChange = (id: string, value: string) => {
+    setLocalCandidates(prev => prev.map(c => c.id === id ? { ...c, name: value } : c))
+  }
+
+  const handleCandidateDirectRefsChange = (id: string, value: number) => {
+    if (!Number.isFinite(value)) return
+    setLocalCandidates(prev => prev.map(c => c.id === id ? { ...c, refsCount: Math.max(0, Math.min(2, value)) } : c))
+  }
+
+  const handleRemoveCandidate = (id: string) => {
+    setLocalCandidates(prev => prev.filter(c => c.id !== id))
   }
 
   const handleAddCandidate = () => {
-    const name = prompt('Candidate name?')
-    if (!name) return
-    setLocalCandidates(prev => [...prev, { id: `${Date.now()}`, name, callBooked: false, refsCount: 0 }])
+    setLocalCandidates(prev => [...prev, { id: ensureCandidateId(), name: '', callBooked: false, refsCount: 0 }])
   }
 
   const handleAddActivity = () => {
@@ -107,7 +129,7 @@ const RoleEditorPopup: React.FC<RoleEditorPopupProps> = ({ open, onClose, card, 
   const handleSave = () => {
     const payload = {
       card: {
-        id: card.id,
+        ...card,
         jobTitle: localTitle,
         company: localCompany,
         salary: localSalary,
@@ -167,14 +189,57 @@ const RoleEditorPopup: React.FC<RoleEditorPopupProps> = ({ open, onClose, card, 
           </div>
           <div className="space-y-2">
             {localCandidates.map(c=> (
-              <div key={c.id} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
-                <div className="text-sm text-gray-800">{c.name}</div>
-                <div className="flex items-center gap-3">
-                  <button className={`text-xs px-2 py-1 rounded-md border ${c.callBooked? 'bg-green-50 border-green-300 text-green-700':'border-gray-300 text-gray-600 hover:bg-gray-50'}`} onClick={()=> handleToggleCall(c.id)}>
-                    {c.callBooked ? 'Call booked' : 'Book call'}
+              <div key={c.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-gray-200 px-3 py-3">
+                <div className="flex-1 min-w-0">
+                  <input
+                    value={c.name}
+                    onChange={e => handleCandidateNameChange(c.id, e.target.value)}
+                    placeholder="Candidate name"
+                    className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
+                  />
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${c.callBooked ? 'bg-green-50 border-green-300 text-green-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+                    onClick={()=> handleToggleCall(c.id)}
+                    type="button"
+                  >
+                    {c.callBooked ? 'Call booked' : 'Mark call booked'}
                   </button>
-                  <button className="text-xs px-2 py-1 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50" onClick={()=> handleAddRef(c.id)}>
-                    Refs {c.refsCount}/2
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50"
+                      onClick={()=> handleRefsChange(c.id, -1)}
+                      aria-label="Decrease references collected"
+                    >
+                      –
+                    </button>
+                    <input
+                      type="number"
+                      min={0}
+                      max={2}
+                      value={c.refsCount || 0}
+                      onChange={e => handleCandidateDirectRefsChange(c.id, Number(e.target.value))}
+                      className="w-14 text-center border border-gray-200 rounded-md py-1 text-sm"
+                    />
+                    <span className="text-xs text-gray-500">refs</span>
+                    <button
+                      type="button"
+                      className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50"
+                      onClick={()=> handleRefsChange(c.id, 1)}
+                      aria-label="Increase references collected"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={()=> handleRemoveCandidate(c.id)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                    aria-label="Remove candidate"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -362,5 +427,3 @@ const RoleEditorPopup: React.FC<RoleEditorPopupProps> = ({ open, onClose, card, 
 }
 
 export default RoleEditorPopup
-
-

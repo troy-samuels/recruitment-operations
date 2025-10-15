@@ -11,6 +11,7 @@ export default function DashboardPage() {
 	const [editPayload, setEditPayload] = React.useState<{ card: any; candidates: any[]; tasks?: any[]; activityLog?: any[] } | null>(null)
 	const [addRoleOpen, setAddRoleOpen] = React.useState(false)
 	const [showCoachmark, setShowCoachmark] = React.useState(false)
+  const [coachmarkPos, setCoachmarkPos] = React.useState<{ top: number; left: number } | null>(null)
   const [inviteOpen, setInviteOpen] = React.useState(false)
   const [emailTemplatesOpen, setEmailTemplatesOpen] = React.useState(false)
   const [urgentOpen, setUrgentOpen] = React.useState(false)
@@ -31,6 +32,60 @@ export default function DashboardPage() {
     }
     return () => window.removeEventListener('open-add-role', hideCoachmark as EventListener)
   }, [])
+
+  // Position the coachmark next to the "+" Add Role anchor when visible (right-side, vertically centered)
+  React.useEffect(() => {
+    if (!showCoachmark) return
+    if (typeof window === 'undefined') return
+
+    const compute = () => {
+      const el = document.getElementById('add-role-anchor')
+      if (el) {
+        const rect = el.getBoundingClientRect()
+        const cardWidth = 320 // w-80
+        const coachEl = document.getElementById('setup-coachmark')
+        const coachHeight = coachEl ? coachEl.getBoundingClientRect().height : 96
+
+        // Default: to the right of the anchor with larger gap to avoid overlap
+        const gap = 20
+        let left = rect.right + gap
+        // If overflow right, place to the left
+        if (left + cardWidth + 12 > window.innerWidth) {
+          left = Math.max(12, rect.left - gap - cardWidth)
+        }
+
+        // Vertically center relative to the anchor; clamp slightly to viewport but prefer alignment
+        let top = rect.top + rect.height / 2 - coachHeight / 2
+        const minTop = 8
+        const maxTop = window.innerHeight - coachHeight - 8
+        top = Math.max(minTop, Math.min(maxTop, top))
+
+        setCoachmarkPos({ top, left })
+        return
+      }
+      // Fallback to original position if anchor not found
+      setCoachmarkPos(null)
+    }
+
+    // Compute now and on resize/scroll
+    const raf = requestAnimationFrame(compute)
+    const onResize = () => compute()
+    const onScroll = () => compute()
+    const onExpand = () => {
+      compute()
+      setTimeout(compute, 150)
+      setTimeout(compute, 300)
+    }
+    window.addEventListener('resize', onResize)
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('expand-sidebar', onExpand)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('expand-sidebar', onExpand)
+    }
+  }, [showCoachmark])
 
   React.useEffect(() => {
     const handler = () => setInviteOpen(true)
@@ -228,10 +283,10 @@ export default function DashboardPage() {
 			)}
 
       {showCoachmark && (
-        <div className="fixed z-40 bottom-6 left-16">
-          <div className="pointer-events-auto bg-white border border-cream-200 shadow-2xl rounded-xl p-4 w-80">
+        <div className={`fixed z-40`} style={coachmarkPos ? { top: coachmarkPos.top, left: coachmarkPos.left } : { bottom: 24, left: 64 }}>
+          <div className="pointer-events-auto bg-white border border-cream-200 shadow-2xl rounded-xl p-4 w-80" id="setup-coachmark">
             <div className="flex items-start gap-3">
-              <span className="mt-1 w-2 h-2 bg-accent-500 rounded-full animate-pulse" />
+              <span className="mt-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               <div className="flex-1">
                 <div className="text-sm font-medium text-primary-600">Setup complete</div>
                 <div className="text-sm text-primary-500 mt-1">Use the green "Add Role" button in the left sidebar to create your first role.</div>

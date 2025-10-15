@@ -52,12 +52,21 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 			// Edge middleware cookie for protected routes
 			if (data.session?.user) setCookie('ro_session', '1', 60 * 60 * 24 * 30)
 			else setCookie('ro_session', '', 0)
-			if (data.session?.user?.id) {
-				fetch('/api/provision', {
+            if (data.session?.user?.id) {
+                fetch('/api/provision', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ userId: data.session.user.id, email: data.session.user.email, name: data.session.user.user_metadata?.name })
-				}).catch(()=>{})
+                })
+                .then(async (res) => {
+                    try {
+                        const json = await res.json().catch(()=>null)
+                        if (json?.workspaceId) {
+                            try { localStorage.setItem('workspace_id', json.workspaceId) } catch {}
+                        }
+                    } catch {}
+                })
+                .catch(()=>{})
 			}
 		})
 		const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -68,12 +77,21 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 			// Update session cookie for middleware
 			if (newSession?.user) setCookie('ro_session', '1', 60 * 60 * 24 * 30)
 			else setCookie('ro_session', '', 0)
-			if (newSession?.user?.id) {
-				fetch('/api/provision', {
+            if (newSession?.user?.id) {
+                fetch('/api/provision', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ userId: newSession.user.id, email: newSession.user.email, name: newSession.user.user_metadata?.name })
-				}).catch(()=>{})
+                })
+                .then(async (res) => {
+                    try {
+                        const json = await res.json().catch(()=>null)
+                        if (json?.workspaceId) {
+                            try { localStorage.setItem('workspace_id', json.workspaceId) } catch {}
+                        }
+                    } catch {}
+                })
+                .catch(()=>{})
 			}
 		})
 		return () => {

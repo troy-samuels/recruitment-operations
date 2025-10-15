@@ -324,7 +324,23 @@ CREATE TABLE role_assignments (
 **Purpose:** Multi-user role assignments
 **Assignment Types:** owner, sourcer, support
 
-#### 6. **candidates**
+#### 6. **role_candidates**
+```sql
+CREATE TABLE role_candidates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    full_name TEXT NOT NULL,
+    call_booked BOOLEAN DEFAULT FALSE,
+    refs_count INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+**Purpose:** Inline pipeline management for candidates tied to a specific role
+**Usage:** Powers dashboard CRUD for candidate checklist & call tracking
+
+#### 7. **candidates**
 ```sql
 CREATE TABLE candidates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -347,7 +363,7 @@ CREATE TABLE candidates (
 ```
 **Purpose:** Candidate database with skills array
 
-#### 7. **pipeline_stages**
+#### 8. **pipeline_stages**
 ```sql
 CREATE TABLE pipeline_stages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

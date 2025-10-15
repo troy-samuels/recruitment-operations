@@ -95,6 +95,21 @@ CREATE TABLE IF NOT EXISTS role_assignments (
 );
 
 -- =============================================
+-- ROLE CANDIDATES TABLE
+-- =============================================
+CREATE TABLE IF NOT EXISTS role_candidates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    full_name TEXT NOT NULL,
+    call_booked BOOLEAN DEFAULT FALSE,
+    refs_count INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_role_candidates_role_id ON role_candidates(role_id);
+
+-- =============================================
 -- CANDIDATES TABLE
 -- =============================================
 
@@ -370,6 +385,15 @@ CREATE POLICY "Users can access role assignments in their workspace" ON role_ass
         )
     );
 
+-- Role Candidates: Workspace-scoped access
+ALTER TABLE role_candidates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can access role candidates in their workspace" ON role_candidates
+    FOR ALL USING (
+        workspace_id = (
+            SELECT workspace_id FROM profiles WHERE id = auth.uid()
+        )
+    );
+
 -- Candidates: Workspace-scoped access
 ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can access candidates in their workspace" ON candidates
@@ -427,6 +451,9 @@ CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_roles_updated_at BEFORE UPDATE ON roles
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_role_candidates_updated_at BEFORE UPDATE ON role_candidates
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_candidates_updated_at BEFORE UPDATE ON candidates

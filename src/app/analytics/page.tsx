@@ -6,50 +6,39 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import useSWR from 'swr'
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  ReferenceLine,
-  Tooltip as RTooltip,
   PieChart,
   Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid
+  Cell
 } from 'recharts'
+
+type RangeKey = 'week' | 'month' | 'year' | 'all'
 
 const AnalyticsInner: React.FC = () => {
   const { view, setView, workspaceTier } = useWorkspace()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [range, setRange] = React.useState<'month'|'quarter'|'year'|'all'>('quarter')
+  const [range, setRange] = React.useState<RangeKey>('month')
   // simplified analytics: focused tiles
   const [summary, setSummary] = React.useState<any>(null)
-  const [heat, setHeat] = React.useState<Array<{ d: string; v: number }>>([])
-  const [leadersTeam, setLeadersTeam] = React.useState<Array<{ userId: string; placements: number }>>([])
-  const [lbTeamOffset] = React.useState(0)
+  const initialRangeRef = React.useRef(range)
+  const initialViewRef = React.useRef(view)
 
   // no dropdowns in simplified view
 
   React.useEffect(() => {
     fetch('/api/metrics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ events: [] }) })
       .catch(()=>{})
-    try { trackEvent('analytics_viewed', { range, view }) } catch {}
+    try { trackEvent('analytics_viewed', { range: initialRangeRef.current, view: initialViewRef.current }) } catch {}
   }, [])
-
   React.useEffect(() => {
     if (workspaceTier !== 'team' && view === 'team') setView('individual')
-  }, [workspaceTier])
+  }, [workspaceTier, view, setView])
 
   // Initialize from URL
   React.useEffect(() => {
     const r = searchParams.get('range') as any
     const v = searchParams.get('view') as any
-    if (r && ['month','quarter','year','all'].includes(r)) setRange(r)
+    if (r && ['week','month','year','all'].includes(r)) setRange(r)
     if (v && ['individual','team'].includes(v)) {
       if (v === 'team' && workspaceTier !== 'team') {
         // ignore if not allowed
@@ -73,13 +62,9 @@ const AnalyticsInner: React.FC = () => {
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const qsBase = workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}&range=${range}` : null
   const { data: swrSummary } = useSWR(qsBase ? `/api/analytics/summary${qsBase}` : null, fetcher)
-  const { data: swrHeat } = useSWR(qsBase ? `/api/analytics/heatmap${qsBase}&metric=stage_moves` : null, fetcher)
-  const { data: swrLbT } = useSWR(qsBase ? `/api/analytics/leaderboard${qsBase}&type=teammates&limit=8&offset=${lbTeamOffset}` : null, fetcher)
-  const { data: swrPlacementsTs } = useSWR(workspaceId ? `/api/analytics/timeseries?workspaceId=${encodeURIComponent(workspaceId)}&metric=placements&range=quarter` : null, fetcher)
+  const { data: swrStageDuration } = useSWR(qsBase ? `/api/analytics/stage-duration${qsBase}` : null, fetcher)
 
   React.useEffect(() => { setSummary(swrSummary || null) }, [swrSummary])
-  React.useEffect(() => { setHeat(swrHeat?.cells || []) }, [swrHeat])
-  React.useEffect(() => { setLeadersTeam(swrLbT?.rows || []) }, [swrLbT])
 
   // exports trimmed in v1; can add later per-table
 
@@ -94,19 +79,6 @@ const AnalyticsInner: React.FC = () => {
     blue500: '#3b82f6',
     gray200: '#e5e7eb',
     gray400: '#9ca3af',
-  }
-
-  const Sparkline: React.FC<{ data?: Array<{ t: string; v: number }> }> = ({ data }) => {
-    const rows = (data && data.length>0 ? data : Array.from({length:12}).map((_,i)=>({ t: String(i), v: Math.max(0, Math.round(10+5*Math.sin(i))) })) )
-    return (
-      <div className="h-10">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={rows} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-            <Area type="monotone" dataKey="v" stroke={brandColors.accent} fill={brandColors.accent} fillOpacity={0.15} strokeWidth={2} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    )
   }
 
   const Donut: React.FC<{ parts: Array<{ name: string; value: number }> }> = ({ parts }) => {
@@ -130,105 +102,26 @@ const AnalyticsInner: React.FC = () => {
     )
   }
 
-  const Gauge: React.FC<{ pct: number }> = ({ pct }) => {
-    const value = Math.max(0, Math.min(100, pct||0))
-    const data = [{ value }, { value: 100 - value }]
-    const colors = [brandColors.success, brandColors.gray200]
-    return (
-      <div className="h-40">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie data={data} startAngle={180} endAngle={0} innerRadius={55} outerRadius={70} dataKey="value" stroke="none">
-              {data.map((_,i)=> <Cell key={i} fill={colors[i]} />)}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    )
+  const rangeLabels: Record<RangeKey, string> = {
+    week: 'Past 7 days',
+    month: 'Past 30 days',
+    year: 'Past 365 days',
+    all: 'All time',
   }
-
-  const BarLeaders: React.FC<{ rows: Array<{ userId: string; placements: number }> }> = ({ rows }) => {
-    const data = (rows || []).slice(0,8).map(r=> ({ name: r.userId?.slice(0,6) || '—', v: r.placements || 0 }))
-    return (
-      <div className="h-52">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 16 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-            <YAxis allowDecimals={false} width={24} tick={{ fontSize: 12 }} />
-            <Bar dataKey="v" fill={brandColors.accent} radius={[4,4,0,0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    )
+  const compareLabelMap: Record<RangeKey, string> = {
+    week: 'last week',
+    month: 'last month',
+    year: 'last year',
+    all: 'previous period',
   }
-
-  const Heatmap: React.FC<{ cells: Array<{ d: string; v: number }> }> = ({ cells }) => {
-    // Build a contiguous 12x7 (84-day) window ending today
-    const today = new Date()
-    const start = new Date(today)
-    start.setHours(0,0,0,0)
-    start.setDate(start.getDate() - 83)
-    const valueByDate = new Map<string, number>()
-    for (const c of (cells || [])) valueByDate.set(c.d, c.v)
-    const days: Array<{ d: string; v: number }> = []
-    for (let i=0;i<84;i++) {
-      const d = new Date(start)
-      d.setDate(start.getDate() + i)
-      const iso = d.toISOString().slice(0,10)
-      days.push({ d: iso, v: valueByDate.get(iso) || 0 })
-    }
-    const vals = days.map(c => c.v)
-    const max = Math.max(...vals, 1)
-    // Gentle scale so a few large values don't wash out the rest
-    const bucket = (v: number) => Math.min(4, Math.floor(Math.sqrt(v / max) * 4))
-    const ramp = ['bg-gray-100','bg-blue-100','bg-blue-300','bg-blue-500','bg-blue-700']
-    const dayLabels = ['M','','W','','F','','']
-
-    return (
-      <div>
-        <div className="flex items-start gap-2">
-          {/* Y axis labels (Mon/Wed/Fri) */}
-          <div className="flex flex-col gap-1 pt-4">
-            {dayLabels.map((lbl, i) => (
-              <div key={i} className="h-4 text-[10px] text-gray-400 leading-4">{lbl}</div>
-            ))}
-          </div>
-          {/* Heatmap grid: 12 columns x 7 rows */}
-          <div className="grid grid-cols-12 gap-1 flex-1">
-            {Array.from({ length: 12 }).map((_, col) => (
-              <div key={col} className="flex flex-col gap-1">
-                {Array.from({ length: 7 }).map((__, row) => {
-                  const idx = col*7 + row
-                  const cell = days[idx]
-                  const cls = ramp[bucket(cell.v)]
-                  return (
-                    <div
-                      key={row}
-                      className={`w-full aspect-square rounded ${cls} hover:ring-1 hover:ring-blue-400 cursor-pointer`}
-                      title={`${cell.d}: ${cell.v}`}
-                      onClick={()=>{ try { trackEvent('analytics_heat_click', { date: cell.d, value: cell.v }) } catch {} }}
-                    />
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* Legend */}
-        <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-500">
-          <span>Low</span>
-          <span className="w-4 h-2 rounded bg-gray-100" />
-          <span className="w-4 h-2 rounded bg-blue-100" />
-          <span className="w-4 h-2 rounded bg-blue-300" />
-          <span className="w-4 h-2 rounded bg-blue-500" />
-          <span className="w-4 h-2 rounded bg-blue-700" />
-          <span>High</span>
-          <span className="ml-2">(max {max})</span>
-        </div>
-      </div>
-    )
-  }
+  const stageStats: Array<any> = swrStageDuration?.stages || []
+  const totalRolesTracked = swrStageDuration?.totalRoles || 0
+  const currencyFormatter = React.useMemo(
+    () => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }),
+    []
+  )
+  const placementsCount = Number(summary?.kpis?.placementsRange ?? summary?.kpis?.placementsQTD ?? 0)
+  const placementsCommissionValue = currencyFormatter.format(Number(summary?.kpis?.placementsCommissionRange ?? 0))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -249,94 +142,139 @@ const AnalyticsInner: React.FC = () => {
               {workspaceTier==='team' && <option value="team">Team</option>}
             </select>
           <select value={range} onChange={(e)=> setRange(e.target.value as any)} className="border border-gray-300 rounded-md px-2 py-1 text-sm">
+            <option value="week">Week</option>
             <option value="month">Month</option>
-            <option value="quarter">Quarter</option>
             <option value="year">Year</option>
             <option value="all">All time</option>
           </select>
           </div>
         </div>
-        {/* KPI strip with simplified Placements tile */}
-        <div className="grid md:grid-cols-5 gap-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col items-center justify-center">
-            <div className="w-full flex items-center justify-between">
-              <div className="text-xs text-gray-500">Placements</div>
-              <select value={range} onChange={(e)=> setRange(e.target.value as any)} className="text-xs border border-gray-200 rounded px-1 py-0.5">
-                <option value="month">Month</option>
-                <option value="quarter">Quarter</option>
-                <option value="year">Year</option>
-                <option value="all">All</option>
-              </select>
+        {/* Placements + Stage Performance */}
+        <div className="mt-6 grid gap-4 xl:grid-cols-[280px_1fr]">
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col items-center justify-center text-center gap-3">
+            <div className="text-xs uppercase tracking-wide text-gray-500">Placements</div>
+            <div className="text-5xl font-extrabold text-gray-900">
+              {placementsCount}
             </div>
-            <div className="mt-2 text-4xl font-extrabold text-gray-900 text-center">
-              {summary?.kpis?.placementsRange ?? summary?.kpis?.placementsQTD ?? 0}
+            <div className="text-sm font-semibold text-gray-600">
+              {placementsCommissionValue}
+            </div>
+            <div className="text-xs text-gray-400">
+              Range: {rangeLabels[range]}
             </div>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-xs text-gray-500">Weighted pipeline</div>
-            <div className="text-xl font-semibold text-gray-900">{typeof summary?.kpis?.weightedPipelineGBP==='number' ? new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(summary.kpis.weightedPipelineGBP/100) : '—'}</div>
-            <Sparkline data={summary?.sparks?.pipeline} />
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-xs text-gray-500">Cycle time P50/P90</div>
-            <div className="text-2xl font-semibold text-gray-900">{summary?.kpis?.cycleTimeP50Days ?? '—'}<span className="text-gray-400 text-base">d</span> / {summary?.kpis?.cycleTimeP90Days ?? '—'}<span className="text-gray-400 text-base">d</span></div>
-            <Sparkline data={summary?.sparks?.cycle} />
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-xs text-gray-500">SLA adherence</div>
-            <div className="text-2xl font-semibold text-gray-900">{typeof summary?.kpis?.slaPct==='number' ? `${summary.kpis.slaPct}%` : '—'}</div>
-            <Sparkline data={summary?.sparks?.sla} />
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-xs text-gray-500">On‑time follow‑ups</div>
-            <div className="text-2xl font-semibold text-gray-900">{typeof summary?.kpis?.followupOnTimePct==='number' ? `${summary.kpis.followupOnTimePct}%` : '—'}</div>
-            <Sparkline data={summary?.sparks?.followups} />
-          </div>
+
+          <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">Stage Performance</h2>
+                <p className="text-xs text-gray-500">
+                  Average time per kanban column • {rangeLabels[range]}
+                </p>
+              </div>
+              {totalRolesTracked > 0 && (
+                <div className="text-xs text-gray-500">
+                  {totalRolesTracked} {totalRolesTracked === 1 ? 'role' : 'roles'} analysed
+                  {typeof swrStageDuration?.overallAvgDays === 'number' && swrStageDuration.overallAvgDays > 0 && (
+                    <span className="ml-2 text-gray-400">
+                      overall avg {swrStageDuration.overallAvgDays}d
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {stageStats.length > 0 ? (
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {stageStats.map((stage: any, idx: number) => {
+                  const delta = typeof stage.deltaPct === 'number' ? stage.deltaPct : null
+                  const direction = delta === null ? 'neutral' : delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat'
+                  const compareLabel = compareLabelMap[range]
+                  const previousAvg = typeof stage.prevAvgDays === 'number' ? stage.prevAvgDays : null
+                  const palette = [
+                    { bg: 'bg-blue-50', text: 'text-blue-600' },
+                    { bg: 'bg-emerald-50', text: 'text-emerald-600' },
+                    { bg: 'bg-amber-50', text: 'text-amber-600' },
+                    { bg: 'bg-purple-50', text: 'text-purple-600' },
+                    { bg: 'bg-sky-50', text: 'text-sky-600' },
+                    { bg: 'bg-rose-50', text: 'text-rose-600' },
+                    { bg: 'bg-slate-100', text: 'text-slate-600' },
+                  ]
+                  const colors = palette[idx % palette.length]
+                  const deltaColor =
+                    direction === 'neutral'
+                      ? 'text-gray-400'
+                      : direction === 'down'
+                        ? 'text-emerald-600'
+                        : direction === 'flat'
+                          ? 'text-gray-500'
+                          : 'text-rose-600'
+                  const arrow = direction === 'up' ? '↑' : direction === 'down' ? '↓' : direction === 'flat' ? '→' : ''
+
+                  return (
+                    <div key={stage.stage} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${colors.bg}`}>
+                            <span className={`text-sm font-semibold ${colors.text}`}>
+                              {(stage.stageName || stage.stage || '').slice(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-xs uppercase tracking-wide text-gray-500">Column</div>
+                            <div className="text-sm font-semibold text-gray-900">{stage.stageName}</div>
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {stage.rolesCount || 0} {stage.rolesCount === 1 ? 'role' : 'roles'}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-end gap-2">
+                        <span className="text-4xl font-bold text-gray-900">
+                          {stage.avgDays}
+                          <span className="ml-1 text-base font-medium text-gray-400">d</span>
+                        </span>
+                        {typeof stage.medianDays === 'number' && (
+                          <span className="text-xs text-gray-400">median {stage.medianDays}d</span>
+                        )}
+                      </div>
+
+                      <div className="mt-3 text-sm">
+                        {delta === null ? (
+                          <span className="text-gray-400">No prior data for comparison</span>
+                        ) : (
+                          <span className={`font-semibold ${deltaColor}`}>
+                            {arrow && <span className="mr-1 align-middle">{arrow}</span>}
+                            {Math.abs(delta).toFixed(1)}%
+                            <span className="ml-1 font-normal text-gray-500">
+                              vs {range === 'all' ? 'previous period' : compareLabel}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+
+                      {previousAvg !== null && (
+                        <div className="mt-1 text-xs text-gray-400">
+                          Prev avg {previousAvg}d
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="mt-6 rounded-2xl border border-dashed border-gray-200 bg-white py-10 text-center text-sm text-gray-400">
+                No stage movement data yet. Move roles through your pipeline to see column insights.
+              </div>
+            )}
+          </section>
         </div>
 
-        {/* Optional secondary KPIs could go here (kept minimal for v1) */}
-
-        {/* Funnel + Stage distribution + SLA gauge */}
-        <div className="mt-6 grid lg:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-medium text-gray-800 mb-2">Stage distribution</div>
-            <Donut parts={summary?.stageDistribution || []} />
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-medium text-gray-800 mb-2">SLA adherence</div>
-            <Gauge pct={summary?.kpis?.slaPct ?? 0} />
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-medium text-gray-800 mb-2">Cumulative placements (quarter)</div>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={(swrPlacementsTs?.points || []).reduce((acc: Array<{t:string; v:number}>, p: {t:string; v:number}) => {
-                  const last = acc.length ? acc[acc.length-1].v : 0
-                  acc.push({ t: p.t, v: last + (p.v || 0) })
-                  return acc
-                }, [])} margin={{ top: 4, right: 8, left: 8, bottom: 16 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="t" tick={{ fontSize: 10 }} hide={false} />
-                  <YAxis allowDecimals={false} width={28} tick={{ fontSize: 10 }} />
-                  <Line type="monotone" dataKey="v" stroke={brandColors.accent} strokeWidth={2} dot={false} />
-                  {(() => {
-                    let target = 0
-                    try {
-                      const s = JSON.parse(localStorage.getItem('onboarding_settings') || 'null')
-                      target = Number(s?.targets?.individualPlacements || 0)
-                    } catch {}
-                    return target > 0 ? <ReferenceLine y={target} stroke={brandColors.gray400} strokeDasharray="4 4" label={{ value: `Target ${target}`, position: 'right', fill: '#6b7280', fontSize: 11 }} /> : null
-                  })()}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Stage aging heatmap */}
+        {/* Stage distribution overview */}
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="text-sm font-medium text-gray-800 mb-2">Activity heatmap</div>
-          <Heatmap cells={heat} />
+          <div className="text-sm font-medium text-gray-800 mb-2">Stage distribution</div>
+          <Donut parts={summary?.stageDistribution || []} />
         </div>
 
         {/* Companies leaderboard and activity feed removed in v1 */}
@@ -352,5 +290,3 @@ export default function AnalyticsPage() {
     </React.Suspense>
   )
 }
-
-

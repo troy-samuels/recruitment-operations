@@ -42,6 +42,11 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <script
+          id="datafast-queue"
+          dangerouslySetInnerHTML={{ __html: "window.datafast=window.datafast||function(){(window.datafast.q=window.datafast.q||[]).push(arguments);};" }}
+        />
         {process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? (
           <script
             defer
@@ -49,6 +54,15 @@ export default function RootLayout({
             src="https://plausible.io/js/script.js"
           />
         ) : null}
+        <script
+          defer
+          data-website-id="dfid_nmPgfD5ZodXEqNJXLL8Nu"
+          data-domain="jobwall.co.uk"
+          src="https://datafa.st/js/script.js"
+        />
+        <script
+          dangerouslySetInnerHTML={{ __html: "if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))}" }}
+        />
       </head>
       <body>
         <AuthProvider>

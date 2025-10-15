@@ -91,6 +91,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
               )}
             </button>
             <button
+              id="add-role-anchor"
               title="Add Role"
               className="p-2 rounded-lg hover:bg-gray-100"
               onClick={(e) => {
@@ -179,6 +180,7 @@ const LeftNavigation: React.FC<LeftNavigationProps> = ({ collapsed = false, acti
           {/* Add Role */}
           <a
             href="#"
+            id="add-role-anchor"
               className={`flex items-center ${collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2'} text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors`}
             title={collapsed ? "Add Role" : ""}
             onClick={(e) => {

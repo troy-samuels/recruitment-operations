@@ -1,5 +1,7 @@
 "use client"
 import React from 'react'
+import { getSupabaseClient } from '@/lib/supabaseClient'
+import { trackEvent } from '@/lib/metrics'
 
 export default function ProfilePage() {
   const [name, setName] = React.useState('')
@@ -7,6 +9,10 @@ export default function ProfilePage() {
   const [role, setRole] = React.useState('admin')
   const [tier, setTier] = React.useState('individual')
   const [seats, setSeats] = React.useState({ purchased: 1, used: 1, left: 0 })
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null)
+  const [uploading, setUploading] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const supabase = React.useMemo(() => getSupabaseClient(), [])
 
   const initials = React.useMemo(() => {
     const base = (name && name.trim().length>0) ? name : 'YN'
@@ -31,7 +37,51 @@ export default function ProfilePage() {
     setRole(r)
     setTier(t)
     setSeats({ purchased, used, left: Math.max(0, purchased - used) })
+    try {
+      if (email) (window as any)?.datafast?.('identify', { user_id: email, name })
+    } catch {}
+    // Fetch avatar_url from profiles if available
+    const fetchAvatar = async () => {
+      try {
+        const auth = await supabase.auth.getUser()
+        const uid = auth.data.user?.id
+        if (!uid) return
+        const { data, error } = await supabase.from('profiles').select('avatar_url').eq('id', uid).maybeSingle()
+        if (!error && data?.avatar_url) setAvatarUrl(data.avatar_url)
+      } catch {}
+    }
+    fetchAvatar()
   }, [])
+
+  const handlePickFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const { data: userRes } = await supabase.auth.getUser()
+      const uid = userRes.user?.id
+      if (!uid) return
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `avatars/${uid}/avatar-${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data: publicUrl } = supabase.storage.from('avatars').getPublicUrl(path)
+      const url = publicUrl.publicUrl
+      const { error: updErr } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', uid)
+      if (updErr) throw updErr
+      setAvatarUrl(url)
+      try { trackEvent('avatar_uploaded'); (window as any)?.datafast?.('avatar_uploaded') } catch {}
+    } catch (err) {
+      // no-op; could show a toast in future
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -40,10 +90,18 @@ export default function ProfilePage() {
 
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold">{initials}</div>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="w-12 h-12 rounded-full object-cover border" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold">{initials}</div>
+            )}
             <div>
               <div className="text-gray-900 font-medium">{name}</div>
               <div className="text-gray-500 text-sm">{email}</div>
+            </div>
+            <div className="ml-auto">
+              <button onClick={handlePickFile} className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50" disabled={uploading}>{uploading ? 'Uploading…' : 'Change avatar'}</button>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
             </div>
           </div>
 

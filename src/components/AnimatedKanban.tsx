@@ -25,7 +25,18 @@ import { CSS } from '@dnd-kit/utilities'
 import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import { useWorkspace } from '@/components/WorkspaceProvider'
 import { trackEvent } from '@/lib/metrics'
+import { getSupabaseClient } from '@/lib/supabaseClient'
 import { loadPipelineStages, type PipelineStage } from '@/lib/pipelineStages'
+import {
+  createRoleRecord,
+  updateRoleRecord,
+  deleteRoleRecord,
+  fetchRoleCandidates,
+  syncRoleCandidates,
+  normaliseCandidateInput,
+  parseRoleMetadata,
+  type CandidateRecordInput,
+} from '@/lib/roles'
 
 interface ActivityLogEntry {
   id: string
@@ -454,14 +465,7 @@ interface AnimatedKanbanProps {
 
 const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, rightCollapsed = false, onOpenEditor, initialCards, disabled }) => {
   const { canCreateRoles, view } = useWorkspace()
-  const DEMO_CARDS: JobCard[] = [
-    { id: '1', jobTitle: 'Senior React Developer', candidateName: 'Sarah Chen', stage: 0, salary: '£65k', company: 'TechFlow Ltd', createdAt: Date.now()- 48*3600*1000, stageUpdatedAt: Date.now()- 48*3600*1000 },
-    { id: '2', jobTitle: 'Data Analyst', candidateName: 'Mike Johnson', stage: 1, salary: '£45k', company: 'DataCorp', createdAt: Date.now()- 96*3600*1000, stageUpdatedAt: Date.now()- 72*3600*1000 },
-    { id: '3', jobTitle: 'Product Manager', candidateName: 'Emma Wilson', stage: 2, salary: '£75k', company: 'InnovateCo', createdAt: Date.now()- 7*24*3600*1000, stageUpdatedAt: Date.now()- 3*24*3600*1000 },
-    { id: '4', jobTitle: 'UX Designer', candidateName: 'David Brown', stage: 1, salary: '£55k', company: 'DesignHub', createdAt: Date.now()- 48*3600*1000, stageUpdatedAt: Date.now()- 36*3600*1000 },
-  ]
-
-  const [jobCards, setJobCards] = useState<JobCard[]>(initialCards ?? DEMO_CARDS)
+  const [jobCards, setJobCards] = useState<JobCard[]>(initialCards ?? [])
 
   const [activeCard, setActiveCard] = useState<JobCard | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
@@ -562,12 +566,136 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [bulkMode, jobCards])
 
-  // Listen for external role additions and insert a new card at start of stage 0
+  // Load from Supabase on mount and subscribe to realtime changes
   useEffect(() => {
-    const handler = (e: Event) => {
+    const supabase = getSupabaseClient()
+    const load = async () => {
+      try {
+        const workspaceId = typeof window !== 'undefined' ? (localStorage.getItem('workspace_id') || undefined) : undefined
+        const query = supabase
+          .from('roles')
+          .select('id, title, job_title, company, company_name, stage, notes, created_at, updated_at')
+          .order('updated_at', { ascending: false })
+        const { data, error } = workspaceId ? await query.eq('workspace_id', workspaceId) : await query
+        if (!error && Array.isArray(data)) {
+          const cards = data.map((r: any) => {
+            const metadata = parseRoleMetadata(r.notes)
+            const jobTitle = r.title || r.job_title || 'Untitled role'
+            const company = r.company || r.company_name || '—'
+            const parsedStage = Number(r.stage)
+            return {
+              id: r.id,
+              jobTitle,
+              company,
+              candidateName: '—',
+              stage: Number.isFinite(parsedStage) ? parsedStage : 0,
+              salary: typeof metadata.salary === 'string' ? metadata.salary : '',
+              createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+              stageUpdatedAt: r.updated_at ? new Date(r.updated_at).getTime() : Date.now(),
+              controlLevel: metadata.controlLevel || undefined,
+              assignees: Array.isArray(metadata.assignees) ? metadata.assignees : [],
+              owner: metadata.owner || (r.owner_id ? 'Owner' : 'You'),
+            } as JobCard
+          })
+          setJobCards(cards)
+
+          const roleIds = data.map((r: any) => r.id).filter(Boolean)
+          const baseCandidateMap: Record<string, CandidateRow[]> = {}
+          cards.forEach(card => {
+            baseCandidateMap[card.id] = []
+          })
+          if (roleIds.length > 0) {
+            try {
+              const candidateMap = await fetchRoleCandidates(roleIds)
+              Object.entries(candidateMap).forEach(([roleId, candidates]) => {
+                baseCandidateMap[roleId] = (candidates as CandidateRecordInput[]).map(candidate => {
+                  const normalised = normaliseCandidateInput(candidate)
+                  return {
+                    id: normalised.id,
+                    name: normalised.name,
+                    callBooked: Boolean(normalised.callBooked),
+                    refsCount: normalised.refsCount || 0,
+                  }
+                })
+              })
+            } catch (candidateError) {
+              console.warn('[kanban] Failed to load role candidates', candidateError)
+            }
+          }
+          setCandidatesByCard(baseCandidateMap)
+        }
+      } catch (err) {
+        console.error('[kanban] Failed to load roles from Supabase', err)
+      }
+    }
+    load()
+
+    try {
+      const channel = (supabase as any).channel?.('kanban-stream')
+      if (channel && (channel as any).on) {
+        channel
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'roles' }, (payload: any) => {
+            const r = payload?.new
+            if (!r?.id || !r?.title) return
+            const metadata = parseRoleMetadata(r.notes)
+            const ownerName = typeof metadata.owner === 'string' && metadata.owner.length > 0 ? metadata.owner : 'You'
+            setJobCards(prev => [{
+              id: r.id,
+              jobTitle: r.title,
+              company: r.company || '—',
+              candidateName: '—',
+              stage: Number(r.stage) || 0,
+              salary: typeof metadata.salary === 'string' ? metadata.salary : '',
+              createdAt: Date.now(),
+              stageUpdatedAt: Date.now(),
+              controlLevel: metadata.controlLevel || undefined,
+              assignees: Array.isArray(metadata.assignees) ? metadata.assignees : [],
+              owner: ownerName,
+            }, ...prev])
+            setCandidatesByCard(prev => ({ ...prev, [r.id]: prev[r.id] || [] }))
+            setStageOrder(prev => {
+              const stageIndex = Number(r.stage) || 0
+              const current = prev[stageIndex] || []
+              if (current.includes(r.id)) return prev
+              return { ...prev, [stageIndex]: [r.id, ...current] }
+            })
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roles' }, (payload: any) => {
+            const r = payload?.new
+            if (!r?.id) return
+            const metadata = parseRoleMetadata(r.notes)
+            setJobCards(prev => prev.map(c => c.id === r.id ? {
+              ...c,
+              jobTitle: r.title || c.jobTitle,
+              company: r.company || c.company,
+              stage: Number(r.stage) || c.stage,
+              salary: typeof metadata.salary === 'string' ? metadata.salary : c.salary,
+              controlLevel: metadata.controlLevel || c.controlLevel,
+              assignees: Array.isArray(metadata.assignees) ? metadata.assignees : c.assignees,
+              owner: typeof metadata.owner === 'string' && metadata.owner.length > 0 ? metadata.owner : c.owner,
+              stageUpdatedAt: Date.now(),
+            } : c))
+          })
+          .subscribe()
+        return () => { try { (supabase as any).removeChannel?.(channel) } catch {} }
+      }
+    } catch {}
+
+    const handler = async (e: Event) => {
       const anyEvent = e as any
       const payload = anyEvent.detail as {
-        id: string; jobTitle: string; company: string; stage: number; controlLevel?: 'high'|'medium'|'low'; tasks?: TaskItem[]
+        id: string
+        jobTitle: string
+        company: string
+        stage: number
+        controlLevel?: 'high' | 'medium' | 'low'
+        controlScore?: number
+        flags?: { hasHmContact?: boolean; interviewsScheduled?: boolean; exclusive?: boolean }
+        assignees?: string[]
+        compensation?: string
+        tasks?: TaskItem[]
+        employmentType?: string
+        owner?: string
       }
       if (!payload || !payload.id) return
       if (!canCreateRoles()) {
@@ -575,25 +703,46 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
         alert('Your workspace settings restrict who can create roles.')
         return
       }
-      console.log('🆕 Received add role event:', payload)
+
       const newCard: JobCard = {
         id: payload.id,
         jobTitle: payload.jobTitle,
         company: payload.company,
         candidateName: '—',
-        salary: '',
+        salary: payload.compensation || '',
         stage: 0,
-        owner: (payload as any).owner || 'You',
-        assignees: (payload as any).assignees || [],
+        owner: payload.owner || 'You',
+        assignees: (payload.assignees || []),
         controlLevel: payload.controlLevel,
         createdAt: Date.now(),
         stageUpdatedAt: Date.now(),
       }
+
       setJobCards(prev => [newCard, ...prev])
+      setCandidatesByCard(prev => ({ ...prev, [newCard.id]: [] }))
       setStageOrder(prev => ({
         ...prev,
-        0: [payload.id, ...((prev[0] || []))],
+        0: [newCard.id, ...((prev[0] || []))],
       }))
+
+      try {
+        await createRoleRecord({
+          id: newCard.id,
+          jobTitle: newCard.jobTitle,
+          company: newCard.company,
+          stage: 0,
+          salary: payload.compensation,
+          controlLevel: payload.controlLevel,
+          controlScore: payload.controlScore,
+          flags: payload.flags,
+          assignees: payload.assignees,
+          employmentType: payload.employmentType,
+          owner: newCard.owner,
+        })
+      } catch (err) {
+        console.error('[kanban] Failed to persist new role', err)
+      }
+
       try {
         window.dispatchEvent(new CustomEvent('kanban-stage-changed', {
           detail: {
@@ -607,15 +756,49 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
           }
         }))
       } catch {}
-      try { localStorage.setItem('first_role_added','1') } catch {}
-      console.log('📌 Card inserted. Total cards:', jobCards.length + 1)
+
+      // Track role creation (entering first stage) for analytics
+      try {
+        trackEvent('role_created', {
+          roleId: newCard.id,
+          jobTitle: newCard.jobTitle,
+          company: newCard.company,
+          stage: 0,
+          stageName: stages[0]?.name || 'Stage 0'
+        })
+
+        const workspaceId = typeof window !== 'undefined' ? localStorage.getItem('workspace_id') : null
+        if (workspaceId) {
+          fetch('/api/metrics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              events: [{
+                name: 'stage_entered',
+                ts: newCard.createdAt,
+                props: {
+                  role_id: newCard.id,
+                  stage: '0',
+                  stage_name: stages[0]?.name || 'Stage 0',
+                  company: newCard.company || '',
+                  job_title: newCard.jobTitle || '',
+                  is_initial: true
+                }
+              }]
+            })
+          }).catch(() => {})
+        }
+      } catch {}
+      try { localStorage.setItem('first_role_added', '1') } catch {}
+
       if (payload.tasks && payload.tasks.length > 0) {
         setTasksByCard(prev => ({ ...prev, [payload.id]: payload.tasks! }))
       }
     }
     window.addEventListener('kanban-add-role', handler as EventListener)
     return () => window.removeEventListener('kanban-add-role', handler as EventListener)
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canCreateRoles])
 
   // Toggle card expand
   useEffect(() => {
@@ -634,23 +817,62 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
 
   // Handle updates coming from RoleEditorPopup
   useEffect(() => {
-    const handler = (e: Event) => {
+    const handler = async (e: Event) => {
       const anyEvent = e as any
       const detail = anyEvent.detail as { card: JobCard; candidates: CandidateRow[]; tasks?: TaskItem[]; activityLog?: ActivityLogEntry[] }
       if (!detail || !detail.card || !detail.card.id) return
 
-      const updatedCard = { ...detail.card }
+      const roleId = detail.card.id
+      const previousCandidates = candidatesByCard[roleId] || []
+      const normalisedCandidates = (detail.candidates || [])
+        .map(candidate => normaliseCandidateInput(candidate))
+        .filter(candidate => candidate.name.length > 0)
+
+      const updatedCard: JobCard = {
+        ...detail.card,
+        salary: detail.card.salary || '',
+      }
       if (detail.activityLog) {
         updatedCard.activityLog = detail.activityLog
       }
 
-      setJobCards(prev => prev.map(c => (c.id === detail.card.id ? { ...c, ...updatedCard } : c)))
-      setCandidatesByCard(prev => ({ ...prev, [detail.card.id]: detail.candidates || [] }))
-      if (detail.tasks) setTasksByCard(prev => ({ ...prev, [detail.card.id]: detail.tasks! }))
+      setJobCards(prev => prev.map(c => (c.id === roleId ? { ...c, ...updatedCard } : c)))
+      setCandidatesByCard(prev => ({
+        ...prev,
+        [roleId]: normalisedCandidates.map(candidate => ({
+          id: candidate.id,
+          name: candidate.name,
+          callBooked: Boolean(candidate.callBooked),
+          refsCount: candidate.refsCount || 0,
+        })),
+      }))
+      if (detail.tasks) setTasksByCard(prev => ({ ...prev, [roleId]: detail.tasks! }))
+
+      try {
+        await updateRoleRecord(roleId, {
+          jobTitle: updatedCard.jobTitle,
+          company: updatedCard.company,
+          salary: updatedCard.salary,
+          owner: updatedCard.owner,
+        })
+        const persisted = await syncRoleCandidates(roleId, normalisedCandidates, previousCandidates)
+        setCandidatesByCard(prev => ({
+          ...prev,
+          [roleId]: persisted.map(candidate => ({
+            id: candidate.id,
+            name: candidate.name,
+            callBooked: Boolean(candidate.callBooked),
+            refsCount: candidate.refsCount || 0,
+          })),
+        }))
+      } catch (err) {
+        console.error('[kanban] Failed to persist role update', err)
+        setCandidatesByCard(prev => ({ ...prev, [roleId]: previousCandidates }))
+      }
     }
     window.addEventListener('kanban-update-card', handler as EventListener)
     return () => window.removeEventListener('kanban-update-card', handler as EventListener)
-  }, [])
+  }, [candidatesByCard])
 
   // Rule engine: Stage-triggered tasks (e.g., CV Sent → 48h chase feedback)
   useEffect(() => {
@@ -692,7 +914,7 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
 
   // Handle deletions coming from RoleEditorPopup (admin only UI)
   useEffect(() => {
-    const handler = (e: Event) => {
+    const handler = async (e: Event) => {
       const anyEvent = e as any
       const id = anyEvent.detail?.id as string
       if (!id) return
@@ -707,6 +929,11 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
         })
         return next
       })
+      try {
+        await deleteRoleRecord(id)
+      } catch (err) {
+        console.error('[kanban] Failed to delete role', err)
+      }
     }
     window.addEventListener('kanban-delete-card', handler as EventListener)
     return () => window.removeEventListener('kanban-delete-card', handler as EventListener)
@@ -1402,12 +1629,16 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
     const movedAt = Date.now()
     const timeInFromStageMs = movedAt - fromStageUpdatedAt
     // Update card stage and ordering state
-  setJobCards(prev => prev.map(card =>
-    card.id === cardId
-      ? { ...card, stage: newStage, stageUpdatedAt: Date.now() }
-      : card
-  ))
+    setJobCards(prev => prev.map(card =>
+      card.id === cardId
+        ? { ...card, stage: newStage, stageUpdatedAt: Date.now() }
+        : card
+    ))
     setStageOrder(nextStageOrder)
+    // Persist stage move
+    updateRoleRecord(cardId, { stage: newStage }).catch(err => {
+      console.error('[kanban] Failed to persist stage move', err)
+    })
 
     // Emit stage change event for rule engine consumers
     try {
@@ -1425,6 +1656,45 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
           method: dropMethod,
         }
       }))
+    } catch {}
+
+    // Track stage change event for analytics
+    try {
+      trackEvent('stage_changed', {
+        roleId: cardId,
+        fromStage: currentCard.stage,
+        toStage: newStage,
+        fromStageName: stages[currentCard.stage]?.name || `Stage ${currentCard.stage}`,
+        toStageName: stages[newStage]?.name || `Stage ${newStage}`,
+        company: currentCard.company,
+        jobTitle: currentCard.jobTitle,
+        durationInPrevStageHours: Math.floor(timeInFromStageMs / 3600000)
+      })
+
+      // Also send to database events table for stage duration analytics
+      const workspaceId = typeof window !== 'undefined' ? localStorage.getItem('workspace_id') : null
+      if (workspaceId) {
+        fetch('/api/metrics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            events: [{
+              name: 'stage_changed',
+              ts: movedAt,
+              props: {
+                role_id: cardId,
+                from_stage: currentCard.stage.toString(),
+                to_stage: newStage.toString(),
+                from_stage_name: stages[currentCard.stage]?.name || `Stage ${currentCard.stage}`,
+                to_stage_name: stages[newStage]?.name || `Stage ${newStage}`,
+                company: currentCard.company || '',
+                job_title: currentCard.jobTitle || '',
+                duration_hours: Math.floor(timeInFromStageMs / 3600000)
+              }
+            }]
+          })
+        }).catch(() => {}) // Silent fail for analytics
+      }
     } catch {}
 
     // Clean up drag state

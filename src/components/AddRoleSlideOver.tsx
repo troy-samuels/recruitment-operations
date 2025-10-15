@@ -76,6 +76,13 @@ const AddRoleSlideOver: React.FC<AddRoleSlideOverProps> = ({ open, onClose, onSu
   const score = useMemo(() => computeControlScore(values), [values])
   const level = useMemo(() => controlLevel(score), [score])
 
+  const generateId = React.useCallback(() => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+    return `role-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
+  }, [])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, type, checked, value } = e.target
     setValues(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
@@ -94,9 +101,10 @@ const AddRoleSlideOver: React.FC<AddRoleSlideOverProps> = ({ open, onClose, onSu
       .split(',')
       .map(s => s.trim())
       .filter(Boolean)
+    const roleId = generateId()
     // Emit global event as well so listeners can always capture
     const detail = {
-      id: `${Date.now()}`,
+      id: roleId,
       jobTitle: values.jobTitle,
       company: values.company,
       stage: 0,
@@ -107,12 +115,15 @@ const AddRoleSlideOver: React.FC<AddRoleSlideOverProps> = ({ open, onClose, onSu
         interviewsScheduled: values.interviewTimesConfirmed,
         exclusive: values.roleExclusivity,
       },
+      compensation: values.compensation,
+      employmentType: values.employmentType,
       owner,
       assignees,
     }
     try { window.dispatchEvent(new CustomEvent('kanban-add-role', { detail })) } catch {}
     onSubmit(detail as any)
     try { trackEvent('role_added', { jobTitle: values.jobTitle, company: values.company }) } catch {}
+    try { (window as any)?.datafast?.('role_added') } catch {}
     setValues(initialValues)
     onClose()
   }
@@ -221,5 +232,3 @@ const AddRoleSlideOver: React.FC<AddRoleSlideOverProps> = ({ open, onClose, onSu
 }
 
 export default AddRoleSlideOver
-
-

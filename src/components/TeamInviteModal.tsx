@@ -49,6 +49,7 @@ const TeamInviteModal: React.FC<TeamInviteModalProps> = ({ open, onClose }) => {
         throw new Error(data?.error || 'Failed to send invites')
       }
       setSuccess(`Sent: ${data.okCount}, Failed: ${data.failCount}`)
+      try { (window as any)?.datafast?.('invite_sent', { count: data.okCount }) } catch {}
       setTimeout(onClose, 1200)
 		} finally {
 			setSubmitting(false)

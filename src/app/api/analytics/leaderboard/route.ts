@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 
+type RangeKey = 'week' | 'month' | 'quarter' | 'year' | 'all'
+
+const mapRange = (raw: string): RangeKey => {
+  const normalized = raw.toLowerCase()
+  if (normalized === 'week' || normalized === '7d') return 'week'
+  if (normalized === 'month' || normalized === '30d') return 'month'
+  if (normalized === 'quarter' || normalized === '90d') return 'quarter'
+  if (normalized === 'year' || normalized === '365d') return 'year'
+  if (normalized === 'all') return 'all'
+  return 'month'
+}
+
 export async function GET(req: NextRequest) {
   try {
     // Simple rate limiter: 60 req/min per IP
@@ -21,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const type = (searchParams.get('type') || 'teammates') as 'teammates'|'companies'
-    const range = (searchParams.get('range') || '30d') as '7d'|'30d'|'90d'
+    const range = mapRange(searchParams.get('range') || 'month')
     const workspaceId = searchParams.get('workspaceId')
     const limit = Math.max(1, Math.min(100, Number(searchParams.get('limit') || 10)))
     const offset = Math.max(0, Number(searchParams.get('offset') || 0))
@@ -30,7 +42,24 @@ export async function GET(req: NextRequest) {
     const admin = getSupabaseAdmin()
     const now = new Date()
     const start = new Date(now)
-    start.setDate(now.getDate() - (range === '7d' ? 7 : range === '30d' ? 30 : 90) + 1)
+    switch (range) {
+      case 'week':
+        start.setDate(now.getDate() - 6)
+        break
+      case 'month':
+        start.setDate(now.getDate() - 29)
+        break
+      case 'year':
+        start.setDate(now.getDate() - 364)
+        break
+      case 'all':
+        start.setFullYear(2020, 0, 1)
+        start.setHours(0, 0, 0, 0)
+        break
+      case 'quarter':
+      default:
+        start.setDate(now.getDate() - 89)
+    }
 
     if (type === 'teammates') {
       // Placements per user in range
@@ -99,5 +128,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ rows: [], total: 0 })
   }
 }
-
 

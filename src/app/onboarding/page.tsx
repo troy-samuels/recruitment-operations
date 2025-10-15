@@ -135,7 +135,8 @@ const OnboardingPage: React.FC = () => {
       settings.permissions = settings.permissions || {}
       settings.permissions.whoCanCreateRoles = whoCanCreateRoles
 			localStorage.setItem('onboarding_settings', JSON.stringify(settings))
-			trackEvent('onboarding_completed', { currentQuarter, quarterEndDate })
+      trackEvent('onboarding_completed', { currentQuarter, quarterEndDate })
+      try { (window as any)?.datafast?.('onboarding_completed') } catch {}
 			localStorage.setItem('onboarding_complete', '1')
 			// Edge middleware guest cookie
 			try { document.cookie = 'ro_guest=1; Path=/; SameSite=Lax' + (window.location.protocol==='https:' ? '; Secure' : '') } catch {}

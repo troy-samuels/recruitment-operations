@@ -1,0 +1,10 @@
+{
+  "name": "Jobwall",
+  "short_name": "Jobwall",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF2DA",
+  "theme_color": "#152B3C",
+  "icons": []
+}
+

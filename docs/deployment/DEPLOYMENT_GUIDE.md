@@ -32,7 +32,7 @@ curl https://jobwall.co.uk/api/health
 
 ## 1. Environment Configuration
 
-### Required Variables (12 total)
+### Core Environment Variables
 
 **Public Variables** (NEXT_PUBLIC_*):
 ```bash
@@ -52,6 +52,18 @@ NEXT_STRIPE_PUBLISHABLE_KEY=pk_live_...
 NEXT_STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 CRON_SECRET=<secure_random_32_char_string>
+```
+
+**Operational & Marketing Toggles** (recommended):
+```bash
+# Controls marketing preview copy in pricing components
+NEXT_PUBLIC_BRAND_PREVIEW=0
+
+# Shared logo URL for transactional email templates
+NEXT_PUBLIC_LOGO_URL=https://jobwall.co.uk/logo.png
+
+# Optional: override alert recipient for cron health checks
+ALERT_EMAIL_TO=ops@jobwall.co.uk
 ```
 
 ### Setting Variables via CLI

@@ -1,14 +1,92 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 
+type RangeKey = 'week' | 'month' | 'quarter' | 'year' | 'all'
+
+const mapRange = (raw: string): RangeKey => {
+  const normalized = raw.toLowerCase()
+  if (normalized === 'week' || normalized === '7d') return 'week'
+  if (normalized === 'month' || normalized === '30d') return 'month'
+  if (normalized === 'quarter' || normalized === '90d') return 'quarter'
+  if (normalized === 'year' || normalized === '365d') return 'year'
+  if (normalized === 'all') return 'all'
+  return 'month'
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const range = (searchParams.get('range') || '30d') as '7d'|'30d'|'90d'
+    const range = mapRange(searchParams.get('range') || 'month')
     const workspaceId = searchParams.get('workspaceId')
     if (!workspaceId) return NextResponse.json({ error: 'workspaceId required' }, { status: 400 })
 
     const admin = getSupabaseAdmin()
+
+    const parseNumeric = (value: any): number => {
+      if (value === null || value === undefined) return 0
+      const num = Number(value)
+      return Number.isFinite(num) ? num : 0
+    }
+
+    const computeRoleCommission = (role: any): number => {
+      const feeAmount = parseNumeric(role.fee_amount)
+      if (feeAmount > 0) return feeAmount
+
+      const feePct = parseNumeric(role.fee_percentage)
+      if (feePct <= 0) return 0
+
+      const salaryMin = parseNumeric(role.salary_min)
+      const salaryMax = parseNumeric(role.salary_max)
+      let base = 0
+
+      if (salaryMin > 0 && salaryMax > 0) {
+        base = (salaryMin + salaryMax) / 2
+      } else {
+        base = salaryMax > 0 ? salaryMax : salaryMin
+      }
+
+      if (base <= 0) {
+        const dayRate = parseNumeric(role.contract_day_rate)
+        if (dayRate > 0) {
+          base = dayRate * 20 // rough monthly conversion
+        }
+      }
+
+      if (base <= 0) return 0
+      return base * (feePct / 100)
+    }
+
+    const sumCommissionForWindow = async (windowStart: Date, windowEnd: Date): Promise<number> => {
+      const { data: placementEvents, error: placementError } = await admin
+        .from('events')
+        .select('role_id')
+        .eq('workspace_id', workspaceId)
+        .eq('event_name', 'placement_created')
+        .gte('ts', windowStart.toISOString())
+        .lte('ts', windowEnd.toISOString())
+
+      if (placementError || !placementEvents || placementEvents.length === 0) return 0
+
+      const roleIds = Array.from(
+        new Set(
+          (placementEvents as Array<{ role_id: string | null }>).map(evt => evt.role_id).filter(Boolean) as string[]
+        )
+      )
+      if (roleIds.length === 0) return 0
+
+      const { data: rolesData, error: rolesError } = await admin
+        .from('roles')
+        .select('id, fee_amount, fee_percentage, salary_min, salary_max, contract_day_rate')
+        .in('id', roleIds)
+
+      if (rolesError || !rolesData) return 0
+
+      let total = 0
+      for (const role of rolesData) {
+        total += computeRoleCommission(role)
+      }
+      return Number(total.toFixed(2))
+    }
 
     // Quarter dates (approximate: calendar quarter)
     const now = new Date()
@@ -26,53 +104,91 @@ export async function GET(req: NextRequest) {
       .lte('ts', quarterEnd.toISOString())
 
     // Range placements and delta vs previous equal-length window
-    const days = range === '7d' ? 7 : range === '30d' ? 30 : 90
+    const daysByRange: Record<Exclude<RangeKey, 'all'>, number> = {
+      week: 7,
+      month: 30,
+      quarter: 90,
+      year: 365,
+    }
+    const useAllTime = range === 'all'
+    const days = useAllTime ? null : daysByRange[range]
     const start = new Date(now)
-    start.setDate(now.getDate() - days + 1)
-    const prevEnd = new Date(start)
-    prevEnd.setDate(start.getDate() - 1)
-    const prevStart = new Date(prevEnd)
-    prevStart.setDate(prevEnd.getDate() - days + 1)
+    let prevStart: Date | null = null
+    let prevEnd: Date | null = null
 
-    const { data: curRows } = await admin
+    if (useAllTime) {
+      start.setFullYear(2020, 0, 1)
+      start.setHours(0, 0, 0, 0)
+    } else if (days) {
+      start.setDate(now.getDate() - days + 1)
+      prevEnd = new Date(start)
+      prevEnd.setDate(start.getDate() - 1)
+      prevStart = new Date(prevEnd)
+      prevStart.setDate(prevEnd.getDate() - days + 1)
+    }
+
+    const curRangeQuery = admin
       .from('events_daily_counts')
       .select('ct, day')
       .eq('workspace_id', workspaceId)
       .eq('event_name', 'placement_created')
       .gte('day', start.toISOString())
       .lte('day', now.toISOString())
-    const { data: prevRows } = await admin
-      .from('events_daily_counts')
-      .select('ct, day')
-      .eq('workspace_id', workspaceId)
-      .eq('event_name', 'placement_created')
-      .gte('day', prevStart.toISOString())
-      .lte('day', prevEnd.toISOString())
+    const prevRangeQuery = prevStart && prevEnd
+      ? admin
+        .from('events_daily_counts')
+        .select('ct, day')
+        .eq('workspace_id', workspaceId)
+        .eq('event_name', 'placement_created')
+        .gte('day', prevStart.toISOString())
+        .lte('day', prevEnd.toISOString())
+      : null
+    const { data: curRows } = await curRangeQuery
+    const prevRows = prevRangeQuery ? (await prevRangeQuery).data : undefined
     const placementsRange = (curRows || []).reduce((s, r) => s + (r as any).ct, 0)
     const placementsPrev = (prevRows || []).reduce((s, r) => s + (r as any).ct, 0)
-    const placementsRangeDelta = placementsRange - placementsPrev
-    const placementsRangePct = placementsPrev === 0 ? (placementsRange > 0 ? 100 : 0) : Math.round(((placementsRange - placementsPrev) / Math.max(1, placementsPrev)) * 100)
+    const placementsRangeDelta = prevRangeQuery ? placementsRange - placementsPrev : 0
+    const placementsRangePct = prevRangeQuery
+      ? (placementsPrev === 0 ? (placementsRange > 0 ? 100 : 0) : Math.round(((placementsRange - placementsPrev) / Math.max(1, placementsPrev)) * 100))
+      : 0
+
+    const placementsCommissionRange = await sumCommissionForWindow(start, now)
+    const hasPrevWindow = Boolean(prevStart && prevEnd)
+    const placementsCommissionPrev = hasPrevWindow && prevStart && prevEnd
+      ? await sumCommissionForWindow(prevStart, prevEnd)
+      : 0
+    const placementsCommissionRangeDelta = hasPrevWindow ? placementsCommissionRange - placementsCommissionPrev : 0
+    const placementsCommissionRangePct = hasPrevWindow
+      ? (placementsCommissionPrev === 0 ? (placementsCommissionRange > 0 ? 100 : 0) : Math.round(((placementsCommissionRange - placementsCommissionPrev) / Math.max(1, placementsCommissionPrev)) * 100))
+      : 0
 
     // Interviews and CVs sent (range + deltas)
     const fetchMetricTotal = async (eventName: string) => {
-      const { data: cur } = await admin
+      const curPromise = admin
         .from('events_daily_counts')
         .select('ct, day')
         .eq('workspace_id', workspaceId)
         .eq('event_name', eventName)
         .gte('day', start.toISOString())
         .lte('day', now.toISOString())
-      const { data: prev } = await admin
-        .from('events_daily_counts')
-        .select('ct, day')
-        .eq('workspace_id', workspaceId)
-        .eq('event_name', eventName)
-        .gte('day', prevStart.toISOString())
-        .lte('day', prevEnd.toISOString())
+      const prevPromise = prevStart && prevEnd
+        ? admin
+          .from('events_daily_counts')
+          .select('ct, day')
+          .eq('workspace_id', workspaceId)
+          .eq('event_name', eventName)
+          .gte('day', prevStart.toISOString())
+          .lte('day', prevEnd.toISOString())
+        : null
+
+      const { data: cur } = await curPromise
+      const prevData = prevPromise ? (await prevPromise).data : undefined
       const curTotal = (cur || []).reduce((s, r) => s + (r as any).ct, 0)
-      const prevTotal = (prev || []).reduce((s, r) => s + (r as any).ct, 0)
-      const delta = curTotal - prevTotal
-      const pct = prevTotal === 0 ? (curTotal > 0 ? 100 : 0) : Math.round(((curTotal - prevTotal) / Math.max(1, prevTotal)) * 100)
+      const prevTotal = (prevData || []).reduce((s, r) => s + (r as any).ct, 0)
+      const delta = prevPromise ? curTotal - prevTotal : 0
+      const pct = prevPromise
+        ? (prevTotal === 0 ? (curTotal > 0 ? 100 : 0) : Math.round(((curTotal - prevTotal) / Math.max(1, prevTotal)) * 100))
+        : 0
       return { curTotal, delta, pct }
     }
 
@@ -113,13 +229,13 @@ export async function GET(req: NextRequest) {
       return mapped.length ? mapped : Array.from({ length: 12 }).map((_, i) => ({ t: String(i), v: 0 }))
     }
 
-    // Fetch recent placement day counts for a basic sparkline
+    // Fetch placement day counts for sparkline using current range window
     const { data: sparkRows } = await admin
       .from('events_daily_counts')
       .select('ct, day')
       .eq('workspace_id', workspaceId)
       .eq('event_name', 'placement_created')
-      .gte('day', prevStart.toISOString())
+      .gte('day', start.toISOString())
       .lte('day', now.toISOString())
 
     // Stage distribution placeholder (replace with live view)
@@ -136,6 +252,7 @@ export async function GET(req: NextRequest) {
         rolesInProgress: rolesInProgress ?? 0,
         urgentCount: urgentCount ?? 0,
         placementsRange,
+        placementsCommissionRange,
         interviewsRange: intv.curTotal,
         cvSentRange: cvs.curTotal,
         quarterProgressPct,
@@ -149,6 +266,8 @@ export async function GET(req: NextRequest) {
       deltas: {
         placementsRangeDelta,
         placementsRangePct,
+        placementsCommissionRangeDelta,
+        placementsCommissionRangePct,
         interviewsRangeDelta: intv.delta,
         interviewsRangePct: intv.pct,
         cvSentRangeDelta: cvs.delta,
@@ -167,5 +286,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: e?.message || 'Server error' }, { status: 500 })
   }
 }
-
-
