@@ -99,44 +99,41 @@ export default function Home() {
       {/* Header */}
       <Header />
 
-      {/* Hero Section - Above the fold */}
-      <section className="relative pt-16 sm:pt-24 pb-12 sm:pb-20 bg-gradient-to-br from-cream-100 via-cream-50 to-white overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="mb-6">
-              Pipeline visibility that
-              <span className="text-accent-500 block">prevents lost placements</span>
-            </h1>
-            <p className="font-body text-lg text-primary-400 mb-10 max-w-3xl mx-auto leading-relaxed">
-              Track roles, candidates and actions in one dashboard. Stay ahead of follow‑ups, protect revenue, and move every deal forward.
-            </p>
+      {/* Main Content - Semantic HTML for LLM understanding */}
+      <main role="main" aria-label="Main content">
+        {/* Hero Section - Above the fold */}
+        <section aria-labelledby="hero-heading" className="relative pt-16 sm:pt-24 pb-12 sm:pb-20 bg-gradient-to-br from-cream-100 via-cream-50 to-white overflow-hidden">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5" aria-hidden="true"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <article className="text-center">
+              <h1 id="hero-heading" className="mb-6">
+                Pipeline visibility that
+                <span className="text-accent-500 block">prevents lost placements</span>
+              </h1>
+              <p className="font-body text-lg text-primary-400 mb-10 max-w-3xl mx-auto leading-relaxed">
+                Track roles, candidates and actions in one dashboard. Stay ahead of follow‑ups, protect revenue, and move every deal forward.
+              </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10 sm:mb-16">
-              <a href="/start/account" className="font-body bg-accent-500 text-white px-8 py-4 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2 text-lg">
-                Get Started
-                <ArrowRight className="w-5 h-5" />
-              </a>
-              {/* Demo link removed until dedicated page is ready */}
-            </div>
-
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10 sm:mb-16">
+                <a href="/start/account" aria-label="Start free trial - no credit card required" className="font-body bg-accent-500 text-white px-8 py-4 rounded-lg hover:bg-accent-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2 text-lg">
+                  Get Started
+                  <ArrowRight className="w-5 h-5" aria-hidden="true" />
+                </a>
+              </div>
+            </article>
           </div>
-        </div>
-      </section>
+        </section>
 
-
-      {/* (Features anchor removed to avoid duplicate target with how-it-works) */}
-
-      {/* Dashboard Preview Section (How it works) */}
-      <section id="how-it-works" className="py-16 sm:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="mb-3">How it works</h2>
-            <p className="font-body text-lg text-primary-400 max-w-3xl mx-auto">
-              Drag and drop candidates through your pipeline, set nudges for follow‑ups, and track progress with live metrics.
-            </p>
-          </div>
+        {/* Dashboard Preview Section (How it works) */}
+        <section id="how-it-works" aria-labelledby="how-it-works-heading" className="py-16 sm:py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <header className="text-center mb-16">
+              <h2 id="how-it-works-heading" className="mb-3">How it works</h2>
+              <p className="font-body text-lg text-primary-400 max-w-3xl mx-auto">
+                Drag and drop candidates through your pipeline, set nudges for follow‑ups, and track progress with live metrics.
+              </p>
+            </header>
 
           {/* Dashboard Preview */}
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden pb-4 sm:pb-6">
@@ -155,26 +152,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trust Indicators Section */}
-      <TrustIndicators />
+        {/* Trust Indicators Section */}
+        <TrustIndicators />
 
-      {/* Pricing Section */}
-      <PricingSection />
+        {/* Pricing Section */}
+        <PricingSection />
 
-      {/* FAQ Section */}
-      <FAQSection />
+        {/* FAQ Section */}
+        <FAQSection />
+      </main>
 
-      {/* Footer */}
+      {/* Footer - Separate from main content */}
       <Footer />
 
       {/* Sticky mobile CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-40 sm:hidden bg-white/90 backdrop-blur border-t border-gray-200">
+      <aside aria-label="Mobile call to action" className="fixed inset-x-0 bottom-0 z-40 sm:hidden bg-white/90 backdrop-blur border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}>
-          <a href="/onboarding" className="w-full inline-flex items-center justify-center bg-accent-500 hover:bg-accent-600 text-white font-body font-semibold py-3 rounded-lg shadow">
+          <a href="/onboarding" aria-label="Get started with Jobwall" className="w-full inline-flex items-center justify-center bg-accent-500 hover:bg-accent-600 text-white font-body font-semibold py-3 rounded-lg shadow">
             Get Started
           </a>
         </div>
-      </div>
+      </aside>
 
       <SignupModal open={signupOpen} onClose={()=> setSignupOpen(false)} />
 
