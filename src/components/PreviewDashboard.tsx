@@ -199,6 +199,7 @@ const PreviewDashboard: React.FC<PreviewDashboardProps> = ({ compact = false }) 
               leftCollapsed
               rightCollapsed
               initialCards={demoRoles}
+              disabled
             />
           </div>
         </div>

@@ -1709,18 +1709,20 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
           <h2 className="font-heading text-2xl font-bold text-gray-900">My Pipeline</h2>
           <p className="font-body text-sm text-gray-600 mt-1">{bulkMode ? 'Select roles to perform bulk actions' : 'Drag and drop candidates through your recruitment process'}</p>
         </div>
-        {/* Bulk Mode Toggle */}
-        <button
-          onClick={toggleBulkMode}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-            bulkMode
-              ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          {bulkMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-          {bulkMode ? `Bulk Mode (${selectedCards.size})` : 'Select Multiple'}
-        </button>
+        {/* Bulk Mode Toggle - Hidden in preview/disabled mode */}
+        {!disabled && (
+          <button
+            onClick={toggleBulkMode}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+              bulkMode
+                ? 'bg-blue-500 text-white hover:bg-blue-600'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {bulkMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+            {bulkMode ? `Bulk Mode (${selectedCards.size})` : 'Select Multiple'}
+          </button>
+        )}
       </div>
 
       <div className="p-6 bg-gray-50" ref={measureRef}>
