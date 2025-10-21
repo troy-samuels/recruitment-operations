@@ -43,6 +43,41 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="manifest" href="/manifest.webmanifest" />
+
+        {/* Organization JSON-LD Schema for SEO & LLM understanding */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Jobwall',
+              legalName: 'Jobwall Ltd',
+              url: 'https://jobwall.co.uk',
+              logo: 'https://jobwall.co.uk/logo.png',
+              description: 'Recruitment operations dashboard preventing lost placements for UK recruitment consultants',
+              foundingDate: '2024',
+              address: {
+                '@type': 'PostalAddress',
+                addressCountry: 'GB',
+                addressRegion: 'England',
+              },
+              contactPoint: {
+                '@type': 'ContactPoint',
+                email: 'info@jobwall.co.uk',
+                contactType: 'Customer Support',
+                areaServed: 'GB',
+                availableLanguage: 'English',
+              },
+              sameAs: [
+                // Add social media URLs when available
+                // 'https://www.linkedin.com/company/jobwall',
+                // 'https://twitter.com/jobwall'
+              ],
+            }),
+          }}
+        />
+
         <script
           id="datafast-queue"
           dangerouslySetInnerHTML={{ __html: "window.datafast=window.datafast||function(){(window.datafast.q=window.datafast.q||[]).push(arguments);};" }}

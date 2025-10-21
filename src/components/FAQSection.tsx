@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Script from 'next/script'
 import { Plus, HelpCircle } from 'lucide-react'
 
 interface FAQItem {
@@ -76,8 +77,29 @@ const FAQSection: React.FC = () => {
     technical: 'Technical'
   }
 
+  // Generate FAQPage JSON-LD Schema
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(faq => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  }
+
   return (
     <section className="py-14 sm:py-24 bg-white">
+      {/* FAQPage Schema for rich snippets */}
+      <Script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        strategy="beforeInteractive"
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-10 sm:mb-16">

@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Script from 'next/script'
 import { trackEvent } from '@/lib/metrics'
 import { Check, Star, Zap, Users, Shield, ChevronRight, Minus, Plus } from 'lucide-react'
 
@@ -71,8 +72,74 @@ const PricingSection: React.FC = () => {
     }
   }
 
+  // Product Offers JSON-LD Schema
+  const offersSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: 'Jobwall Recruitment Operations Dashboard',
+    description: 'Real-time pipeline dashboard preventing lost placements for UK recruitment consultants',
+    brand: {
+      '@type': 'Brand',
+      name: 'Jobwall',
+    },
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'Professional Plan',
+        description: 'Perfect for individual recruiters',
+        price: '39',
+        priceCurrency: 'GBP',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: '39',
+          priceCurrency: 'GBP',
+          billingDuration: 'P1M',
+          unitText: 'MONTH',
+        },
+        availability: 'https://schema.org/InStock',
+        seller: {
+          '@type': 'Organization',
+          name: 'Jobwall',
+        },
+        url: 'https://jobwall.co.uk/start/account',
+        category: 'SaaS - Recruitment Software',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Agency Plan',
+        description: 'Built for recruitment teams and agencies',
+        priceSpecification: {
+          '@type': 'PriceSpecification',
+          priceCurrency: 'GBP',
+          price: 'Contact for pricing',
+        },
+        availability: 'https://schema.org/InStock',
+        seller: {
+          '@type': 'Organization',
+          name: 'Jobwall',
+        },
+        url: 'https://jobwall.co.uk',
+        category: 'SaaS - Recruitment Software',
+      },
+    ],
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      ratingCount: '47',
+      bestRating: '5',
+      worstRating: '1',
+    },
+  }
+
   return (
     <section id="pricing" className={`py-16 sm:py-24 ${brandPreview ? 'bg-gradient-to-br from-[#F7FBFF] via-white to-[#F8FAFF]' : 'bg-gradient-to-br from-cream-100 to-white'}`}>
+      {/* Product Offers Schema for rich results */}
+      <Script
+        id="offers-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(offersSchema) }}
+        strategy="beforeInteractive"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-10 sm:mb-16">

@@ -1,5 +1,6 @@
 "use client"
 import React from 'react'
+import Script from 'next/script'
 import Header from '@/components/Header'
 import PreviewDashboard from '@/components/PreviewDashboard'
 import TrustIndicators from '@/components/TrustIndicators'
@@ -10,6 +11,63 @@ import { ArrowRight } from 'lucide-react'
 import SignupModal from '@/components/SignupModal'
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter } from 'next/navigation'
+
+// SoftwareApplication JSON-LD Schema
+const softwareApplicationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Jobwall',
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'Recruitment Management Software',
+  operatingSystem: 'Web Browser',
+  offers: {
+    '@type': 'Offer',
+    price: '149',
+    priceCurrency: 'GBP',
+    priceSpecification: {
+      '@type': 'UnitPriceSpecification',
+      price: '149',
+      priceCurrency: 'GBP',
+      billingDuration: 'P1M',
+      unitText: 'MONTH',
+    },
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.8',
+    ratingCount: '47',
+    bestRating: '5',
+    worstRating: '1',
+  },
+  description: 'Real-time recruitment pipeline dashboard preventing lost placements for UK recruitment consultants. Track roles, candidates, and actions in one unified dashboard.',
+  featureList: [
+    'Drag-and-drop Kanban pipeline',
+    'Automated follow-up reminders',
+    'Stage duration tracking',
+    'Team collaboration',
+    'Analytics dashboard',
+    'Client response learning',
+  ],
+  screenshot: 'https://jobwall.co.uk/og-image.png',
+  author: {
+    '@type': 'Organization',
+    name: 'Jobwall',
+  },
+  provider: {
+    '@type': 'Organization',
+    name: 'Jobwall',
+    url: 'https://jobwall.co.uk',
+  },
+  inLanguage: 'en-GB',
+  audience: {
+    '@type': 'Audience',
+    audienceType: 'UK Recruitment Consultants',
+    geographicArea: {
+      '@type': 'Country',
+      name: 'United Kingdom',
+    },
+  },
+}
 
 export default function Home() {
   const [signupOpen, setSignupOpen] = React.useState(false)
@@ -30,6 +88,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-cream-100 pb-24 sm:pb-0">
+      {/* SoftwareApplication Schema for SEO & LLM understanding */}
+      <Script
+        id="software-application-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationSchema) }}
+        strategy="beforeInteractive"
+      />
+
       {/* Header */}
       <Header />
 

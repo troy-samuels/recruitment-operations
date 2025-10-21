@@ -1,0 +1,115 @@
+# Jobwall Robots.txt - Optimized for search engines and LLM crawlers
+# Generated: 2025-10-21
+# Site: https://jobwall.co.uk
+
+# Main Sitemap
+Sitemap: https://jobwall.co.uk/sitemap.xml
+
+# Allow all crawlers by default
+User-agent: *
+Allow: /
+
+# Block authenticated/private pages
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /analytics
+Disallow: /analytics/*
+Disallow: /billing
+Disallow: /billing/*
+Disallow: /profile
+Disallow: /profile/*
+Disallow: /settings
+Disallow: /settings/*
+Disallow: /team
+Disallow: /team/*
+Disallow: /onboarding
+Disallow: /onboarding/*
+Disallow: /messages
+Disallow: /messages/*
+
+# Block API routes (not meant for indexing)
+Disallow: /api/
+Disallow: /api/*
+
+# Block auth pages (no SEO value)
+Disallow: /login
+Disallow: /reset
+Disallow: /update-password
+
+# Allow public pages explicitly (for clarity)
+Allow: /
+Allow: /start/account
+Allow: /start/seats
+Allow: /get-started
+Allow: /help
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+
+# Future content pages (create these next)
+Allow: /features
+Allow: /use-cases
+Allow: /blog
+Allow: /blog/*
+Allow: /resources
+Allow: /about
+Allow: /contact
+Allow: /demo
+
+# LLM-specific user agents
+# ChatGPT
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /dashboard
+Disallow: /analytics
+Disallow: /billing
+Disallow: /profile
+Disallow: /settings
+Disallow: /team
+Disallow: /onboarding
+Disallow: /messages
+Disallow: /api/
+
+# Claude (Anthropic)
+User-agent: Claude-Web
+User-agent: anthropic-ai
+Allow: /
+Disallow: /dashboard
+Disallow: /analytics
+Disallow: /billing
+Disallow: /profile
+Disallow: /settings
+Disallow: /team
+Disallow: /onboarding
+Disallow: /messages
+Disallow: /api/
+
+# Google Gemini
+User-agent: Google-Extended
+Allow: /
+Disallow: /dashboard
+Disallow: /analytics
+Disallow: /billing
+Disallow: /profile
+Disallow: /settings
+Disallow: /team
+Disallow: /onboarding
+Disallow: /messages
+Disallow: /api/
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+Disallow: /dashboard
+Disallow: /analytics
+Disallow: /billing
+Disallow: /profile
+Disallow: /settings
+Disallow: /team
+Disallow: /onboarding
+Disallow: /messages
+Disallow: /api/
+
+# Crawl delay for aggressive bots (1 second)
+User-agent: *
+Crawl-delay: 1
