@@ -4,6 +4,7 @@ import Script from 'next/script'
 import { Calendar, Clock, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, Target, Bell, BarChart3, Users } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import Breadcrumbs from '@/components/Breadcrumbs'
 
 export default function BlogPost() {
   // Article JSON-LD schema for SEO
@@ -44,15 +45,19 @@ export default function BlogPost() {
 
       <Header />
 
+      {/* Breadcrumbs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Breadcrumbs
+            items={[
+              { label: 'Blog', href: '/blog' },
+              { label: 'How to Prevent Lost Placements', href: '/blog/how-to-prevent-lost-placements' }
+            ]}
+          />
+        </div>
+      </div>
+
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Back Link */}
-        <a
-          href="/blog"
-          className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mb-8"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Blog
-        </a>
 
         {/* Article Header */}
         <header className="mb-10">

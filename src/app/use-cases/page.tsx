@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import Breadcrumbs from '@/components/Breadcrumbs'
 
 export default function UseCasesPage() {
   const useCases = [
@@ -218,6 +219,13 @@ export default function UseCasesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+
+      {/* Breadcrumbs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Breadcrumbs items={[{ label: 'Use Cases', href: '/use-cases' }]} />
+        </div>
+      </div>
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary-500 to-primary-700 text-white py-16 sm:py-20">
