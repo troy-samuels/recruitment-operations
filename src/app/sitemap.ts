@@ -74,9 +74,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     },
 
-    // Future high-value pages (create these for SEO boost)
-    // Uncomment as you create these pages
-    /*
+    // Content marketing pages
     {
       url: `${baseUrl}/features`,
       lastModified: now,
@@ -89,6 +87,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+
+    // Blog posts
+    {
+      url: `${baseUrl}/blog/how-to-prevent-lost-placements`,
+      lastModified: new Date('2025-10-21'),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+
+    // Future pages (uncomment as created)
+    /*
     {
       url: `${baseUrl}/demo`,
       lastModified: now,
@@ -107,21 +122,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.7,
     },
-    {
-      url: `${baseUrl}/blog`,
-      lastModified: now,
-      changeFrequency: 'daily',
-      priority: 0.8,
-    },
     */
 
-    // Note: Blog posts would be dynamically added here from a database/CMS
-    // Example structure:
-    // ...blogPosts.map(post => ({
-    //   url: `${baseUrl}/blog/${post.slug}`,
-    //   lastModified: post.updatedAt,
-    //   changeFrequency: 'weekly',
-    //   priority: 0.8,
-    // }))
+    // Note: Additional blog posts would be added here as they're created
   ]
 }

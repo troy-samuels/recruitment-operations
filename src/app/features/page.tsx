@@ -321,6 +321,47 @@ export default function FeaturesPage() {
         </div>
       </section>
 
+      {/* Related Resources */}
+      <section className="bg-white py-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="font-heading text-3xl font-bold text-gray-900 mb-8 text-center">
+            Related Resources
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <a
+              href="/use-cases"
+              className="bg-gray-50 rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow group"
+            >
+              <h3 className="font-heading text-xl font-bold text-gray-900 mb-2">
+                Real-World Use Cases
+              </h3>
+              <p className="text-gray-600 mb-4">
+                See how agencies, in-house teams, and freelance consultants use these features to prevent lost placements
+              </p>
+              <span className="text-primary-600 font-semibold group-hover:gap-2 inline-flex items-center gap-1 transition-all">
+                Explore Use Cases
+                <ArrowRight className="w-4 h-4" />
+              </span>
+            </a>
+            <a
+              href="/blog/how-to-prevent-lost-placements"
+              className="bg-gray-50 rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow group"
+            >
+              <h3 className="font-heading text-xl font-bold text-gray-900 mb-2">
+                How to Prevent Lost Placements
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Learn 7 proven strategies to protect £24k-36k annual revenue through better pipeline management
+              </p>
+              <span className="text-primary-600 font-semibold group-hover:gap-2 inline-flex items-center gap-1 transition-all">
+                Read Guide
+                <ArrowRight className="w-4 h-4" />
+              </span>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="bg-primary-50 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

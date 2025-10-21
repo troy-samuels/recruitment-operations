@@ -244,6 +244,84 @@ export default function Home() {
         {/* Trust Indicators Section */}
         <TrustIndicators />
 
+        {/* Explore More Section */}
+        <section className="bg-gray-50 py-16 sm:py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="font-heading text-3xl font-bold text-gray-900 mb-4">
+                Explore Jobwall
+              </h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Learn more about how Jobwall helps recruitment consultants prevent lost placements
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              <a
+                href="/features"
+                className="bg-white rounded-xl border border-gray-200 p-8 hover:shadow-lg transition-shadow group"
+              >
+                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-xl font-bold text-gray-900 mb-2">
+                  Features
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Explore 12 comprehensive features designed to prevent lost placements
+                </p>
+                <span className="text-primary-600 font-semibold group-hover:gap-2 inline-flex items-center gap-1 transition-all">
+                  View All Features
+                  <ArrowRight className="w-4 h-4" />
+                </span>
+              </a>
+
+              <a
+                href="/use-cases"
+                className="bg-white rounded-xl border border-gray-200 p-8 hover:shadow-lg transition-shadow group"
+              >
+                <div className="w-12 h-12 bg-accent-100 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-xl font-bold text-gray-900 mb-2">
+                  Use Cases
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  See how agencies, in-house teams, and freelancers use Jobwall
+                </p>
+                <span className="text-primary-600 font-semibold group-hover:gap-2 inline-flex items-center gap-1 transition-all">
+                  Explore Use Cases
+                  <ArrowRight className="w-4 h-4" />
+                </span>
+              </a>
+
+              <a
+                href="/blog"
+                className="bg-white rounded-xl border border-gray-200 p-8 hover:shadow-lg transition-shadow group"
+              >
+                <div className="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-xl font-bold text-gray-900 mb-2">
+                  Blog
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Expert insights on recruitment operations and preventing lost placements
+                </p>
+                <span className="text-primary-600 font-semibold group-hover:gap-2 inline-flex items-center gap-1 transition-all">
+                  Read Articles
+                  <ArrowRight className="w-4 h-4" />
+                </span>
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* Pricing Section */}
         <PricingSection />
 
