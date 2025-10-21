@@ -8,6 +8,26 @@ export const metadata: Metadata = {
   title: 'Recruitment Operations | Pipeline Management for UK Consultants',
   description: 'Real-time pipeline dashboard preventing lost placements through superior operational visibility for UK recruitment consultants.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  keywords: [
+    'recruitment pipeline management',
+    'recruitment CRM',
+    'UK recruitment software',
+    'placement tracking',
+    'candidate pipeline',
+    'recruitment operations',
+    'prevent lost placements',
+    'recruitment consultant tools',
+    'hiring pipeline dashboard',
+    'recruitment analytics',
+  ],
+  authors: [{ name: 'Jobwall' }],
+  creator: 'Jobwall',
+  publisher: 'Jobwall',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
     title: 'Recruitment Operations Dashboard',
     description: 'Prevent dropped placements with a real-time operations dashboard.',
@@ -18,7 +38,7 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Recruitment Operations Dashboard',
+        alt: 'Jobwall Recruitment Operations Dashboard - Kanban pipeline view showing recruitment stages',
       },
     ],
     locale: 'en_GB',
@@ -29,6 +49,22 @@ export const metadata: Metadata = {
     title: 'Recruitment Operations Dashboard',
     description: 'Prevent dropped placements with a real-time operations dashboard.',
     images: ['/og-image.png'],
+    creator: '@jobwall',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
   },
 }
 

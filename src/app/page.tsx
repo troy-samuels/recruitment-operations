@@ -12,6 +12,87 @@ import SignupModal from '@/components/SignupModal'
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter } from 'next/navigation'
 
+// HowTo JSON-LD Schema for "How it works" section
+const howToSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How to Prevent Lost Placements with Jobwall',
+  description: 'Step-by-step guide to using Jobwall recruitment pipeline dashboard to track candidates and prevent lost placements',
+  image: 'https://jobwall.co.uk/og-image.png',
+  totalTime: 'PT10M',
+  estimatedCost: {
+    '@type': 'MonetaryAmount',
+    currency: 'GBP',
+    value: '39',
+  },
+  supply: [
+    {
+      '@type': 'HowToSupply',
+      name: 'Email address for account creation',
+    },
+    {
+      '@type': 'HowToSupply',
+      name: 'Existing candidate list (optional CSV file)',
+    },
+  ],
+  tool: [
+    {
+      '@type': 'HowToTool',
+      name: 'Web browser (Chrome, Firefox, Safari, Edge)',
+    },
+    {
+      '@type': 'HowToTool',
+      name: 'Internet connection',
+    },
+  ],
+  step: [
+    {
+      '@type': 'HowToStep',
+      position: 1,
+      name: 'Create your free account',
+      text: 'Sign up with your email address at jobwall.co.uk/start/account. No credit card required for the 7-day free trial.',
+      url: 'https://jobwall.co.uk/start/account',
+      image: 'https://jobwall.co.uk/og-image.png',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 2,
+      name: 'Set your quarterly targets and SLA rules',
+      text: 'Complete the onboarding questionnaire to configure your placement goals, stage duration limits (default 72 hours), and notification preferences.',
+      image: 'https://jobwall.co.uk/og-image.png',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 3,
+      name: 'Add roles to your pipeline',
+      text: 'Create job role cards by clicking the "+" button. Enter job title, company, candidate name, salary, and fee details. Alternatively, bulk import from CSV.',
+      image: 'https://jobwall.co.uk/og-image.png',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 4,
+      name: 'Drag and drop candidates through stages',
+      text: 'Move role cards between pipeline columns (New Submission → Client Review → Interview → Offer → Placed) by dragging. Jobwall automatically tracks stage duration.',
+      image: 'https://jobwall.co.uk/og-image.png',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 5,
+      name: 'Respond to smart reminders',
+      text: 'Jobwall flags roles requiring attention when they exceed SLA limits or when client follow-ups are due. Click on urgent actions to see what needs attention and take immediate action.',
+      image: 'https://jobwall.co.uk/og-image.png',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 6,
+      name: 'Track performance with analytics',
+      text: 'View your analytics dashboard to see stage duration metrics, placement velocity, and pipeline health. Filter by week, month, quarter, or all-time to identify trends.',
+      url: 'https://jobwall.co.uk/analytics',
+      image: 'https://jobwall.co.uk/og-image.png',
+    },
+  ],
+}
+
 // SoftwareApplication JSON-LD Schema
 const softwareApplicationSchema = {
   '@context': 'https://schema.org',
@@ -93,6 +174,14 @@ export default function Home() {
         id="software-application-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationSchema) }}
+        strategy="beforeInteractive"
+      />
+
+      {/* HowTo Schema for step-by-step guidance */}
+      <Script
+        id="howto-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
         strategy="beforeInteractive"
       />
 
