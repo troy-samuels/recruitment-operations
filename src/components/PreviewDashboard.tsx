@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, User, Briefcase, Phone, Building2 } from 'lucide-react'
 import DashboardTopBar from './DashboardTopBar'
 import WorkspaceProvider from '@/components/WorkspaceProvider'
 import LeftNavigation from './LeftNavigation'
@@ -10,6 +10,146 @@ import AnimatedKanban from './AnimatedKanban'
 
 interface PreviewDashboardProps {
   compact?: boolean
+}
+
+interface JobCard {
+  id: string
+  jobTitle: string
+  candidateName: string
+  stage: number
+  salary: string
+  company: string
+  owner?: string
+  assignees?: string[]
+  controlLevel?: 'high' | 'medium' | 'low'
+  createdAt?: number
+  stageUpdatedAt?: number
+  activityLog?: any[]
+}
+
+// Simple read-only card details modal for demo
+interface CardDetailsModalProps {
+  card: JobCard | null
+  onClose: () => void
+}
+
+const CardDetailsModal: React.FC<CardDetailsModalProps> = ({ card, onClose }) => {
+  if (!card) return null
+
+  const stageNames = [
+    'New Submission',
+    'Client Review',
+    'Interview Scheduled',
+    'Interview Complete',
+    'Offer Stage',
+    'Placed'
+  ]
+
+  const priorityColors = {
+    high: 'bg-red-100 text-red-800',
+    medium: 'bg-yellow-100 text-yellow-800',
+    low: 'bg-green-100 text-green-800'
+  }
+
+  const formatDate = (timestamp?: number) => {
+    if (!timestamp) return 'N/A'
+    return new Date(timestamp).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity duration-300">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slide-in">
+        {/* Header */}
+        <div className="bg-primary-500 text-white p-6 relative">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <h2 className="text-2xl font-heading font-bold mb-2">{card.jobTitle}</h2>
+          <div className="flex items-center gap-2 text-white/90">
+            <Building2 className="w-4 h-4" />
+            <span className="font-body">{card.company}</span>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          {/* Status Badge */}
+          <div className="mb-6">
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+              {stageNames[card.stage]}
+            </span>
+            {card.controlLevel && (
+              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ml-2 ${priorityColors[card.controlLevel]}`}>
+                {card.controlLevel.charAt(0).toUpperCase() + card.controlLevel.slice(1)} Priority
+              </span>
+            )}
+          </div>
+
+          {/* Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Candidate */}
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                <User className="w-5 h-5 text-primary-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Candidate</p>
+                <p className="text-base font-semibold text-gray-900">{card.candidateName}</p>
+              </div>
+            </div>
+
+            {/* Salary */}
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Salary Range</p>
+                <p className="text-base font-semibold text-gray-900">{card.salary}</p>
+              </div>
+            </div>
+
+            {/* Created Date */}
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Created</p>
+              <p className="text-base text-gray-900">{formatDate(card.createdAt)}</p>
+            </div>
+
+            {/* Last Updated */}
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Last Updated</p>
+              <p className="text-base text-gray-900">{formatDate(card.stageUpdatedAt)}</p>
+            </div>
+          </div>
+
+          {/* Demo Note */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <span className="font-semibold">Demo Preview:</span> In the full version, you'd see candidate details, tasks, activity logs, and more.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 bg-gray-50 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // Demo data for homepage preview
@@ -184,6 +324,15 @@ const demoRoles = [
 const PreviewDashboard: React.FC<PreviewDashboardProps> = ({ compact = false }) => {
   const [leftCollapsed, setLeftCollapsed] = useState(true)
   const [rightCollapsed, setRightCollapsed] = useState(true)
+  const [selectedCard, setSelectedCard] = useState<JobCard | null>(null)
+
+  const handleOpenEditor = (payload: { card: JobCard; candidates?: any[]; tasks?: any[]; activityLog?: any[] }) => {
+    setSelectedCard(payload.card)
+  }
+
+  const handleCloseModal = () => {
+    setSelectedCard(null)
+  }
 
   if (compact) {
     // Compact embed mode for homepage demo (now interactive!)
@@ -200,8 +349,11 @@ const PreviewDashboard: React.FC<PreviewDashboardProps> = ({ compact = false }) 
               rightCollapsed
               initialCards={demoRoles}
               hideControls={true}
+              onOpenEditor={handleOpenEditor}
             />
           </div>
+          {/* Card Details Modal */}
+          <CardDetailsModal card={selectedCard} onClose={handleCloseModal} />
         </div>
       </WorkspaceProvider>
     )
