@@ -460,10 +460,11 @@ interface AnimatedKanbanProps {
   rightCollapsed?: boolean
   onOpenEditor?: (payload: { card: JobCard; candidates: CandidateRow[]; tasks?: TaskItem[]; activityLog?: ActivityLogEntry[] }) => void
   initialCards?: JobCard[]
-  disabled?: boolean
+  hideControls?: boolean // Hide bulk actions button (for preview mode)
+  disabled?: boolean // Disable drag/drop interactions (when editing)
 }
 
-const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, rightCollapsed = false, onOpenEditor, initialCards, disabled }) => {
+const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, rightCollapsed = false, onOpenEditor, initialCards, hideControls = false, disabled = false }) => {
   const { canCreateRoles, view } = useWorkspace()
   const [jobCards, setJobCards] = useState<JobCard[]>(initialCards ?? [])
 
@@ -1709,8 +1710,8 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
           <h2 className="font-heading text-2xl font-bold text-gray-900">My Pipeline</h2>
           <p className="font-body text-sm text-gray-600 mt-1">{bulkMode ? 'Select roles to perform bulk actions' : 'Drag and drop candidates through your recruitment process'}</p>
         </div>
-        {/* Bulk Mode Toggle - Hidden in preview/disabled mode */}
-        {!disabled && (
+        {/* Bulk Mode Toggle - Hidden in preview mode */}
+        {!hideControls && (
           <button
             onClick={toggleBulkMode}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
@@ -1746,7 +1747,6 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
               className={`
                 flex gap-3 sm:gap-4 pb-2 snap-x snap-mandatory kanban-scroll
                 transition-all duration-200 ease-in-out cursor-${isPanning ? 'grabbing' : 'default'}
-                ${disabled ? 'pointer-events-none select-none' : ''}
                 ${isDragging ? 'overflow-hidden touch-none select-none' : 'overflow-x-auto touch-auto'}
               `}
               onScroll={handleScroll}
@@ -1754,8 +1754,6 @@ const AnimatedKanban: React.FC<AnimatedKanbanProps> = ({ leftCollapsed = false, 
               style={{
                 WebkitOverflowScrolling: isDragging ? 'auto' : 'touch',
                 scrollBehavior: isDragging ? 'auto' : 'smooth',
-                pointerEvents: disabled ? 'none' : undefined,
-                userSelect: disabled ? 'none' as any : undefined
               }}
             >
           {stages.map((stage) => {
